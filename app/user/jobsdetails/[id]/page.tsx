@@ -37,6 +37,8 @@ interface Job {
   salary: string;
   status: string;
   createdAt: string;
+
+  applied?: boolean; // ✅ track if user already applied
 }
 
 /* ================= PAGE ================= */
@@ -52,6 +54,8 @@ const Page = () => {
 
   const [showLoading, setShowLoading] = useState(true);
   const [job, setJob] = useState<Job | null>(null);
+  const [applied, setApplied] = useState(false);
+  const [applying, setApplying] = useState(false);
 
   /* ================= AUTH CHECK ================= */
 
@@ -89,6 +93,7 @@ const Page = () => {
         });
 
         setJob(res.data.data);
+        setApplied(res.data.data.applied === true); // ✅ set applied state
       } catch (error) {
         toast.error("Failed to load job details");
       }
@@ -97,7 +102,38 @@ const Page = () => {
     fetchJob();
   }, [id]);
 
-  /* ================= STATES ================= */
+  /* ================= APPLY ================= */
+
+  const handleApplication = async (jobId: string) => {
+    if (applied || applying) return;
+
+    setApplying(true);
+
+    try {
+      await toast.promise(
+        api.post(`/user/addapplication/${jobId}`, {}, { withCredentials: true }),
+        {
+          loading: "Applying for job...",
+          success: (res) =>
+            res.data?.message || "Application submitted successfully 🎉",
+          error: (err) => {
+            if (err.response?.status === 409) return "Already applied";
+            if (err.response?.status === 404) return "Job not found";
+            if (err.response?.status === 401) return "Please login";
+            return "Something went wrong";
+          },
+        }
+      );
+
+      setApplied(true); // ✅ update UI after successful application
+    } catch (error) {
+      // toast already handles errors
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  /* ================= LOADING ================= */
 
   if (loading || showLoading) {
     return <Loading text="Fetching job details..." />;
@@ -107,184 +143,166 @@ const Page = () => {
     return <p className="text-center mt-10">Job not found</p>;
   }
 
-  /* ================= UI ================= */
+  /* ================= RENDER ================= */
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <UserNavbar />
- <div className="max-w-6xl mx-auto px-4 pt-6">
-      {/* Back Button */}
-      <BackButton label="Jobs" />
-    </div>
-      <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-    
-        {/* ================= LEFT ================= */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Header */}
-          <div className="bg-white rounded-3xl shadow-sm p-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {job.title}
-            </h1>
 
-            <p className="text-gray-600 mt-2 text-lg">
-              {job.companyName}
-            </p>
+      <div className="max-w-6xl mx-auto px-4 pt-6">
+        <BackButton label="Jobs" />
+      </div>
 
-            <div className="flex flex-wrap gap-3 mt-5 text-sm">
-              <span className="px-3 py-1 rounded-full bg-gray-100">
-                📍 {job.location}
-              </span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">
-                🧑‍💼 {job.experience} years
-              </span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">
-                🎯 {job.seniorityLevel}
-              </span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">
-                💼 {job.jobType}
-              </span>
-              <span className="px-3 py-1 rounded-full bg-gray-100">
-                💰 {job.salary}
-              </span>
-            </div>
-          </div>
-
-          {/* About */}
-          <div className="bg-white rounded-3xl shadow-sm p-8">
-            <h2 className="text-xl font-semibold mb-4">
-              About the role
-            </h2>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {job.description}
-            </p>
-          </div>
-
-          {/* Requirements */}
-          {job.requirements && (
+      <main className="flex-1">
+        <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* ================= LEFT ================= */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Header */}
             <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">
-                Requirements
-              </h2>
-              <p className="text-gray-700 whitespace-pre-line">
-                {job.requirements}
-              </p>
-            </div>
-          )}
+              <h1 className="text-3xl font-bold text-gray-900">{job.title}</h1>
+              <p className="text-gray-600 mt-2 text-lg">{job.companyName}</p>
 
-          {/* Qualifications */}
-          {job.qualifications && (
-            <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">
-                Qualifications
-              </h2>
-              <p className="text-gray-700 whitespace-pre-line">
-                {job.qualifications}
-              </p>
-            </div>
-          )}
-
-          {/* Skills */}
-          <div className="bg-white rounded-3xl shadow-sm p-8">
-            <h2 className="text-xl font-semibold mb-4">
-              Skills
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {job.skills.map((skill, index) => (
-                <span
-                  key={index}
-                  className="px-4 py-1.5 rounded-full bg-sky-50 text-sky-700 text-sm font-medium"
-                >
-                  {skill}
+              <div className="flex flex-wrap gap-3 mt-5 text-sm">
+                <span className="px-3 py-1 rounded-full bg-gray-100">
+                  📍 {job.location}
                 </span>
-              ))}
+                <span className="px-3 py-1 rounded-full bg-gray-100">
+                  🧑‍💼 {job.experience} years
+                </span>
+                <span className="px-3 py-1 rounded-full bg-gray-100">
+                  🎯 {job.seniorityLevel}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-gray-100">
+                  💼 {job.jobType}
+                </span>
+                <span className="px-3 py-1 rounded-full bg-gray-100">
+                  💰 {job.salary}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Benefits */}
-          {job.benefits?.length > 0 && (
+            {/* About */}
             <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">
-                Benefits
-              </h2>
-              <ul className="list-disc list-inside text-gray-700 space-y-1">
-                {job.benefits.map((benefit, idx) => (
-                  <li key={idx}>{benefit}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Interview Process */}
-          {job.interviewProcess && (
-            <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">
-                Interview Process
-              </h2>
-              <p className="text-gray-700">
-                {job.interviewProcess}
+              <h2 className="text-xl font-semibold mb-4">About the role</h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                {job.description}
               </p>
             </div>
-          )}
 
-          {/* Tags */}
-          {job.tags?.length > 0 && (
+            {/* Requirements */}
+            {job.requirements && (
+              <div className="bg-white rounded-3xl shadow-sm p-8">
+                <h2 className="text-xl font-semibold mb-4">Requirements</h2>
+                <p className="text-gray-700 whitespace-pre-line">{job.requirements}</p>
+              </div>
+            )}
+
+            {/* Qualifications */}
+            {job.qualifications && (
+              <div className="bg-white rounded-3xl shadow-sm p-8">
+                <h2 className="text-xl font-semibold mb-4">Qualifications</h2>
+                <p className="text-gray-700 whitespace-pre-line">{job.qualifications}</p>
+              </div>
+            )}
+
+            {/* Skills */}
             <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">
-                Tags
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">Skills</h2>
               <div className="flex flex-wrap gap-2">
-                {job.tags.map((tag, index) => (
+                {job.skills.map((skill, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-sm"
+                    className="px-4 py-1.5 rounded-full bg-sky-50 text-sky-700 text-sm font-medium"
                   >
-                    #{tag}
+                    {skill}
                   </span>
                 ))}
               </div>
             </div>
-          )}
-        </div>
 
-        {/* ================= RIGHT ================= */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-24">
-            <p className="text-sm text-gray-500 mb-2">Job Status</p>
+            {/* Benefits */}
+            {job.benefits?.length > 0 && (
+              <div className="bg-white rounded-3xl shadow-sm p-8">
+                <h2 className="text-xl font-semibold mb-4">Benefits</h2>
+                <ul className="list-disc list-inside text-gray-700 space-y-1">
+                  {job.benefits.map((benefit, idx) => (
+                    <li key={idx}>{benefit}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-            <p
-              className={`font-semibold mb-6 ${
-                job.status === "Open"
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
-            >
-              {job.status}
-            </p>
+            {/* Interview Process */}
+            {job.interviewProcess && (
+              <div className="bg-white rounded-3xl shadow-sm p-8">
+                <h2 className="text-xl font-semibold mb-4">Interview Process</h2>
+                <p className="text-gray-700">{job.interviewProcess}</p>
+              </div>
+            )}
 
-            <button
-              className="w-full py-3 rounded-xl bg-sky-600 text-white font-semibold text-lg hover:bg-sky-700 transition"
-              onClick={() =>
-                toast.success("Applied (connect backend later)")
-              }
-            >
-              Apply Now
-            </button>
+            {/* Tags */}
+            {job.tags?.length > 0 && (
+              <div className="bg-white rounded-3xl shadow-sm p-8">
+                <h2 className="text-xl font-semibold mb-4">Tags</h2>
+                <div className="flex flex-wrap gap-2">
+                  {job.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-sm"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
-            <button
-              className="w-full py-3 mt-3 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition"
-              onClick={() => toast.success("Saved for later")}
-            >
-              Save for Later
-            </button>
+          {/* ================= RIGHT ================= */}
+          <div>
+            <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-24">
+              <p className="text-sm text-gray-500 mb-2">Job Status</p>
 
-            <div className="mt-6 text-xs text-gray-500">
-              Posted on{" "}
-              {new Date(job.createdAt).toLocaleDateString()}
+              <p
+                className={`font-semibold mb-6 ${
+                  job.status === "Open" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {job.status}
+              </p>
+
+              <button
+                disabled={applied || applying || job.status !== "Open"}
+                onClick={() => handleApplication(job._id)}
+                className={`w-full py-3 rounded-xl font-semibold text-lg transition
+                  ${
+                    applied
+                      ? "bg-green-100 text-green-700 cursor-not-allowed"
+                      : job.status !== "Open"
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-sky-600 text-white hover:bg-sky-700"
+                  }
+                `}
+              >
+                {applied ? "Applied ✓" : applying ? "Applying..." : "Apply Now"}
+              </button>
+
+              {applied && (
+                <p className="mt-4 text-sm text-green-600 font-medium text-center">
+                  You’ve already applied for this job
+                </p>
+              )}
+
+              <div className="mt-6 text-xs text-gray-500 text-center">
+                Posted on {new Date(job.createdAt).toLocaleDateString()}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <Footer/>
+      </main>
+
+      <Footer />
     </div>
   );
 };

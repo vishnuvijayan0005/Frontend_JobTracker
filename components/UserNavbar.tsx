@@ -143,7 +143,7 @@ useEffect(() => {
                 </MenuItem>
 
    
-     <MenuItem>
+     {/* <MenuItem>
                   {({ active }) => (
                     <button
                       onClick={() => router.push("/saved-jobs")}
@@ -154,7 +154,7 @@ useEffect(() => {
                      <Bookmark size={18} />Saved Jobs
                     </button>
                   )}
-                </MenuItem>
+                </MenuItem> */}
                  <MenuItem>
                   {({ active }) => (
                     <button

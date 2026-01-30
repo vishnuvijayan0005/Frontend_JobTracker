@@ -8,6 +8,7 @@ import Loading from "@/components/Loading";
 import { AppDispatch, Rootstate } from "@/store/store";
 import { fetchMe } from "@/store/slice/auth/auth";
 import toast, { Toaster } from "react-hot-toast";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   const router = useRouter();
@@ -92,12 +93,21 @@ useEffect(() => {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <UserNavbar />
-      <main className="max-w-7xl mx-auto p-6">
-        <h1 className="text-2xl font-bold">Welcome, {user.name || "User"}!</h1>
-        {/* You can add more content here */}
-      </main>
-    </div>
+   <div className="min-h-screen flex flex-col bg-gray-50">
+  {/* Navbar */}
+  <UserNavbar />
+
+  {/* Main Content (takes remaining height) */}
+  <main className="flex-1 max-w-7xl mx-auto p-6 w-full">
+    <h1 className="text-2xl font-bold">
+      Welcome, {user.name || "User"}!
+    </h1>
+    {/* More content here */}
+  </main>
+
+  {/* Footer (always at bottom) */}
+  <Footer />
+</div>
+
   );
 }

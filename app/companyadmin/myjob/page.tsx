@@ -10,6 +10,7 @@ import { fetchMe } from "@/store/slice/auth/auth";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, Rootstate } from "@/store/store";
 import { useRouter } from "next/navigation";
+import Footer from "@/components/Footer";
 
 export default function MyJobs() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -17,12 +18,12 @@ export default function MyJobs() {
   const [modalOpen, setModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile toggle
   const [showLoading, setShowLoading] = useState(true);
- 
+
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
- 
+
   const { loading, isAuthenticated, user } = useSelector(
-    (state: Rootstate) => state.auth
+    (state: Rootstate) => state.auth,
   );
   useEffect(() => {
     dispatch(fetchMe());
@@ -33,7 +34,6 @@ export default function MyJobs() {
       if (!isAuthenticated || user?.role !== "companyadmin") {
         router.replace("/access-denied");
       } else {
-        
         const timer = setTimeout(() => {
           setShowLoading(false);
         }, 1500);
@@ -42,14 +42,15 @@ export default function MyJobs() {
       }
     }
   }, [loading, isAuthenticated, user, router]);
- 
+
   const fetchJobs = async () => {
     setShowLoading(true);
     try {
-      const res = await api.get(`/companyadmin/myjobs`, { withCredentials: true });
-    //  console.log(res.data.data);
-     
-      
+      const res = await api.get(`/companyadmin/myjobs`, {
+        withCredentials: true,
+      });
+      //  console.log(res.data.data);
+
       if (res.data.success) {
         setJobs(res.data.data);
       }
@@ -63,7 +64,6 @@ export default function MyJobs() {
   useEffect(() => {
     fetchJobs();
   }, []);
-
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -119,19 +119,80 @@ export default function MyJobs() {
         ) : jobs.length === 0 ? (
           <p className="text-gray-500">No jobs found. Add one!</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {jobs.map((job) => (
               <div
                 key={job._id}
-                className="border rounded-xl p-4 flex justify-between items-center"
+                className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm 
+                 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between"
               >
-                <div>
-                  <h2 className="font-semibold text-lg">{job.title}</h2>
-                  <p className="text-gray-500">
-                    {job.location} • {job.jobType}
-                  </p>
+                {/* Header */}
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 hover:text-sky-600 transition">
+                    {job.title}
+                  </h2>
+                  {job.companyName && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {job.companyName}
+                    </p>
+                  )}
                 </div>
-                <span className="text-gray-400">{job.salary || "N/A"}</span>
+
+                {/* Meta Info */}
+                <div className="flex flex-col gap-2 mb-4">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="font-medium">📍</span>
+                    <span>{job.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="font-medium">💼</span>
+                    <span>{job.jobType}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
+                    <span>💰</span>
+                    <span>{job.salary || "Not disclosed"}</span>
+                  </div>
+                </div>
+
+       
+                <div className="flex justify-between items-center mt-auto">
+                  <button
+                    className={`px-3 py-1 text-xs font-semibold rounded-full focus:outline-none focus:ring-2 focus:ring-offset-1 transition-colors ${
+                      job.status?.toLowerCase() === "open"
+                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        : "bg-red-100 text-red-700 hover:bg-red-200"
+                    }`}
+                    onClick={async () => {
+                      try {
+                    
+                        const newStatus =
+                          job.status === "Open" ? "Closed" : "Open";
+                        await api.patch(
+                          `/companyadmin/job/${job._id}/status`,
+                          { status: newStatus },
+                          { withCredentials: true },
+                        );
+                        setJobs((prev) =>
+                          prev.map((j) =>
+                            j._id === job._id ? { ...j, status: newStatus } : j,
+                          ),
+                        );
+                      } catch (err) {
+                        console.error("Failed to update job status", err);
+                      }
+                    }}
+                  >
+                    {job.status || "Open"}
+                  </button>
+
+                  {/* CTA */}
+                  <button
+                    className="flex items-center gap-1 text-sm font-medium text-sky-600 hover:text-sky-700 transition"
+                    onClick={() => router.push(`/companyadmin/job/${job._id}`)}
+                  >
+                    See details →
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -144,6 +205,7 @@ export default function MyJobs() {
           onJobAdded={fetchJobs} // refresh job list after adding
         />
       </div>
+      <Footer/>
     </div>
   );
 }

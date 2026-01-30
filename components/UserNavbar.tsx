@@ -14,6 +14,8 @@ import {
   Bookmark,
   X,
   Search,
+  Icon,
+  FileText,
 } from "lucide-react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 
@@ -39,7 +41,7 @@ export default function UserNavbar() {
       text: "Companies",
       action: () => setCompanyOpen(true),
     },
-    { icon: <Bookmark size={18} />, text: "Saved Jobs", path: "/saved-jobs" },
+
   ];
 
 useEffect(() => {
@@ -139,6 +141,32 @@ useEffect(() => {
                     </button>
                   )}
                 </MenuItem>
+
+   
+     <MenuItem>
+                  {({ active }) => (
+                    <button
+                      onClick={() => router.push("/saved-jobs")}
+                      className={`flex w-full items-center gap-3 px-5 py-2 text-sm ${
+                        active ? "bg-sky-50" : ""
+                      }`}
+                    >
+                     <Bookmark size={18} />Saved Jobs
+                    </button>
+                  )}
+                </MenuItem>
+                 <MenuItem>
+                  {({ active }) => (
+                    <button
+                      onClick={() => router.push("/applied-jobs")}
+                      className={`flex w-full items-center gap-3 px-5 py-2 text-sm ${
+                        active ? "bg-sky-50" : ""
+                      }`}
+                    >
+                     <FileText size={18}/>Applied Jobs
+                    </button>
+                  )}
+                </MenuItem>
                 <MenuItem>
                   {({ active }) => (
                     <button
@@ -149,6 +177,7 @@ useEffect(() => {
                     >
                       <LogOut size={18} /> Logout
                     </button>
+
                   )}
                 </MenuItem>
               </MenuItems>

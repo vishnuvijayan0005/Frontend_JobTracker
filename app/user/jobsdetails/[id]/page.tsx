@@ -11,6 +11,7 @@ import UserNavbar from "@/components/UserNavbar";
 import { fetchMe } from "@/store/slice/auth/auth";
 import { AppDispatch, Rootstate } from "@/store/store";
 import BackButton from "@/components/BackButton";
+import Footer from "@/components/Footer";
 
 /* ================= TYPES ================= */
 
@@ -283,6 +284,7 @@ const Page = () => {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 };

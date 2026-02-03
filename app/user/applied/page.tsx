@@ -63,6 +63,8 @@ const AppliedJobsPage = () => {
         const res = await api.get("/user/appliedjobs", {
           withCredentials: true,
         });
+        // console.log(res.data.data);
+        
         setAppliedJobs(res.data.data);
       } catch {
         toast.error("Failed to load applied jobs");

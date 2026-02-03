@@ -7,6 +7,9 @@ import {
   Building2,
   Settings,
   LogOut,
+  UserCheck,
+  UserCheck2,
+  ClipboardCheck,
 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
@@ -91,12 +94,25 @@ if(isLoggingOut){
     <Users />
     Applicants
   </Link>
-
+ <Link
+    href="/companyadmin/shortlisted"
+    className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-slate-100 font-medium text-gray-700"
+  >
+    <UserCheck2 />
+          Shortlisted
+  </Link>
+  <Link
+    href="/companyadmin/updateresult"
+    className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-slate-100 font-medium text-gray-700"
+  >
+    <ClipboardCheck />
+          Update result
+  </Link>
   <Link
     href="/companyadmin/companyprofile"
     className="w-full flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-slate-100 font-medium text-gray-700"
   >
-    <Settings />
+    <Building2 />
     Company Profile
   </Link>
 </nav>

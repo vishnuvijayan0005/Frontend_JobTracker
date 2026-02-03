@@ -26,7 +26,7 @@ interface JobGroup {
   applicants: Applicant[];
 }
 
-/* ================= STATUS CONFIG ================= */
+
 
 const STATUS_OPTIONS = [
   "applied",
@@ -46,12 +46,13 @@ const statusStyles: Record<string, string> = {
   hired: "bg-emerald-100 text-emerald-700",
 };
 
-/* ================= PAGE ================= */
+
 
 export default function ApplicantsPage() {
   const [jobs, setJobs] = useState<JobGroup[]>([]);
   const [openJobs, setOpenJobs] = useState<string[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [showLoading, setShowLoading] = useState(true);
   const [editingAppId, setEditingAppId] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
@@ -61,17 +62,15 @@ export default function ApplicantsPage() {
     status: string;
   } | null>(null);
 
-  // 🔹 Filter state
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-
-  // Redux auth
   const { loading, isAuthenticated, user } = useSelector(
     (state: Rootstate) => state.auth,
   );
 
+  
   useEffect(() => {
     dispatch(fetchMe());
   }, [dispatch]);
@@ -81,13 +80,55 @@ export default function ApplicantsPage() {
       if (!isAuthenticated || user?.role !== "companyadmin") {
         router.replace("/access-denied");
       } else {
-        const timer = setTimeout(() => {
-          setShowLoading(false);
-        }, 1000);
+        const timer = setTimeout(() => setShowLoading(false), 1000);
         return () => clearTimeout(timer);
       }
     }
   }, [loading, isAuthenticated, user, router]);
+
+  const groupByJob = (applications: any[]): JobGroup[] => {
+    const map = new Map<string, JobGroup>();
+    applications.forEach((app) => {
+      if (!map.has(app.jobId)) {
+        map.set(app.jobId, {
+          jobId: app.jobId,
+          title: app.jobTitle,
+          applicants: [],
+        });
+      }
+      map.get(app.jobId)!.applicants.push({
+        id: app.applicationId,
+        name: app.applicant.name,
+        email: app.applicant.email,
+        status: app.status,
+        resumeUrl: app.resumeUrl,
+
+        appliedAt: app.appliedAt,
+      });
+    });
+
+    return Array.from(map.values());
+  };
+
+  const fetchApplicants = async () => {
+    try {
+      const res = await api.get("/companyadmin/getapplicants", {
+        withCredentials: true,
+      });
+      console.log(res.data.data);
+
+      setJobs(groupByJob(res.data.data));
+    } catch (err) {
+      console.error("Failed to fetch applicants", err);
+    } finally {
+      setShowLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApplicants();
+  }, []);
+
 
   const toggleJob = (jobId: string) => {
     setOpenJobs((prev) =>
@@ -97,48 +138,6 @@ export default function ApplicantsPage() {
     );
   };
 
-  const groupByJob = (applications: any[]): JobGroup[] => {
-    const map = new Map<string, JobGroup>();
-
-    applications.forEach((app) => {
-      if (!map.has(app.jobId)) {
-        map.set(app.jobId, {
-          jobId: app.jobId,
-          title: app.jobTitle,
-          applicants: [],
-        });
-      }
-
-      map.get(app.jobId)!.applicants.push({
-        id: app.applicationId,
-        name: app.applicant.name,
-        email: app.applicant.email,
-        status: app.status,
-        resumeUrl: app.resumeUrl,
-        appliedAt: app.appliedAt,
-      });
-    });
-
-    return Array.from(map.values());
-  };
-
-  /* ================= API ================= */
-
-  const fetchApplicants = async () => {
-    try {
-      const res = await api.get("/companyadmin/getapplicants", {
-        withCredentials: true,
-      });
-      // console.log(res.data.data);
-      
-      setJobs(groupByJob(res.data.data));
-    } catch (err) {
-      console.error("Failed to fetch applicants", err);
-    } finally {
-      setShowLoading(false);
-    }
-  };
-
   const updateStatus = async (
     applicationId: string,
     newStatus: string,
@@ -146,7 +145,6 @@ export default function ApplicantsPage() {
   ) => {
     try {
       setUpdating(true);
-
       await api.patch(
         "/companyadmin/updateApplicationStatus",
         { applicationId, status: newStatus },
@@ -176,19 +174,37 @@ export default function ApplicantsPage() {
     }
   };
 
-  useEffect(() => {
-    fetchApplicants();
-  }, []);
+  const getFilteredJobs = (): JobGroup[] => {
+    if (statusFilter === "all") return jobs;
 
-  /* ================= UI ================= */
+    return jobs
+      .map((job) => ({
+        ...job,
+        applicants: job.applicants.filter(
+          (applicant) => applicant.status === statusFilter,
+        ),
+      }))
+      .filter((job) => job.applicants.length > 0);
+  };
+
+  const sidebarMargin = collapsed ? "md:ml-20" : "md:ml-64";
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <CompanySidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      {/* Sidebar */}
+      <CompanySidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+      />
 
-      <main className="flex-1 p-6 md:p-8">
+      {/* Main content */}
+      <main
+        className={`flex-1 transition-all duration-300 p-4 md:p-6 lg:p-10 overflow-auto ${sidebarMargin}`}
+      >
         {/* Mobile Header */}
-        <div className="md:hidden flex items-center gap-3 mb-6">
+        <div className="md:hidden flex items-center justify-between mb-6">
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="p-2 rounded-lg border bg-white"
@@ -198,10 +214,11 @@ export default function ApplicantsPage() {
           <h1 className="text-xl font-bold">Applicants</h1>
         </div>
 
-        <h1 className="hidden md:block text-2xl font-bold mb-4">Applicants</h1>
+        {/* Desktop Header */}
+        <h1 className="hidden md:block text-2xl font-bold mb-6">Applicants</h1>
 
         {/* Filter */}
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-6 flex items-center gap-3">
           <label htmlFor="statusFilter" className="font-medium">
             Filter by Status:
           </label>
@@ -222,15 +239,15 @@ export default function ApplicantsPage() {
 
         {showLoading ? (
           <p className="text-center text-gray-500">Loading applicants...</p>
-        ) : jobs.length === 0 ? (
-          <p className="text-center text-gray-500">No applicants yet</p>
+        ) : getFilteredJobs().length === 0 ? (
+          <p className="text-center text-gray-500">No applicants found</p>
         ) : (
-          <div className="space-y-4">
-            {jobs.map((job) => (
+          <div className="space-y-6">
+            {getFilteredJobs().map((job) => (
               <div key={job.jobId} className="bg-white rounded-2xl shadow-sm">
                 <button
                   onClick={() => toggleJob(job.jobId)}
-                  className="w-full flex justify-between items-center px-6 py-4 bg-gray-100 hover:bg-gray-200"
+                  className="w-full flex justify-between items-center px-6 py-4 bg-gray-100 hover:bg-gray-200 rounded-t-2xl"
                 >
                   <h2 className="font-semibold">{job.title}</h2>
                   {openJobs.includes(job.jobId) ? (
@@ -242,80 +259,74 @@ export default function ApplicantsPage() {
 
                 {openJobs.includes(job.jobId) && (
                   <div className="divide-y">
-                    {job.applicants
-                      .filter((applicant) =>
-                        statusFilter === "all"
-                          ? true
-                          : applicant.status === statusFilter,
-                      )
-                      .map((applicant) => (
-                        <div
-                          key={applicant.id}
-                          className="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-                        >
-                          <div>
-                            <h3 className="font-semibold">{applicant.name}</h3>
-                            <p className="text-sm text-gray-500 flex items-center gap-1">
-                              <Mail size={14} /> {applicant.email}
-                            </p>
-                          </div>
+                    {job.applicants.map((applicant) => (
+                      <div
+                        key={applicant.id}
+                        className="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                      >
+                        <div>
+                          <h3 className="font-semibold">{applicant.name}</h3>
+                          <p className="text-sm text-gray-500 flex items-center gap-1">
+                            <Mail size={14} /> {applicant.email}
+                          </p>
+                        </div>
 
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <button
-                                onClick={() =>
-                                  setEditingAppId(
-                                    editingAppId === applicant.id
-                                      ? null
-                                      : applicant.id,
-                                  )
-                                }
-                                className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
-                                  statusStyles[applicant.status]
-                                }`}
-                              >
-                                {applicant.status}
-                              </button>
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <button
+                              onClick={() =>
+                                setEditingAppId(
+                                  editingAppId === applicant.id
+                                    ? null
+                                    : applicant.id,
+                                )
+                              }
+                              className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
+                                statusStyles[applicant.status]
+                              }`}
+                            >
+                              {applicant.status}
+                            </button>
 
-                              {editingAppId === applicant.id && (
-                                <div className="absolute right-0 mt-2 w-44 bg-white border rounded-xl shadow-xl z-50">
-                                  {STATUS_OPTIONS.map((status) => (
-                                    <button
-                                      key={status}
-                                      disabled={updating}
-                                      onClick={() =>
-                                        setConfirmData({
-                                          applicationId: applicant.id,
-                                          jobId: job.jobId,
-                                          status,
-                                        })
-                                      }
-                                      className={`w-full text-left px-4 py-2 text-sm capitalize hover:bg-gray-100 ${
-                                        status === applicant.status
-                                          ? "font-semibold text-blue-600 bg-gray-50"
-                                          : ""
-                                      }`}
-                                    >
-                                      {status}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            {applicant.resumeUrl && (
-                              <button
-                                onClick={() =>
-                                  window.open(applicant.resumeUrl, "_blank")
-                                }
-                                className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-100"
-                              >
-                                <FileText size={16} /> Resume
-                              </button>
+                            {editingAppId === applicant.id && (
+                              <div className="absolute right-0 mt-2 w-44 bg-white border rounded-xl shadow-xl z-50">
+                                {STATUS_OPTIONS.map((status) => (
+                                  <button
+                                    key={status}
+                                    disabled={updating}
+                                    onClick={() =>
+                                      setConfirmData({
+                                        applicationId: applicant.id,
+                                        jobId: job.jobId,
+                                        status,
+                                      })
+                                    }
+                                    className={`w-full text-left px-4 py-2 text-sm capitalize hover:bg-gray-100 ${
+                                      status === applicant.status
+                                        ? "font-semibold text-blue-600 bg-gray-50"
+                                        : ""
+                                    }`}
+                                  >
+                                    {status}
+                                  </button>
+                                ))}
+                              </div>
                             )}
                           </div>
+
+                          {applicant.resumeUrl && (
+                            <a
+                              href={applicant.resumeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-100"
+                            >
+                              <FileText size={16} /> View Resume
+                            </a>
+                          )}
                         </div>
-                      ))}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

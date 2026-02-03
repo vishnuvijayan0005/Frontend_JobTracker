@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/utils/baseUrl";
 
-/* ================= TYPES ================= */
+
 
 export interface User {
   id: string;
@@ -18,18 +18,16 @@ interface AuthState {
   error: string | null;
 }
 
-/* ================= INITIAL STATE ================= */
+
 
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  loading: true, // important for initial fetchMe()
+  loading: true, 
   error: null,
 };
 
-/* ================= THUNKS ================= */
 
-// 🔐 Check logged-in user via cookie
 export const fetchMe = createAsyncThunk<User, void, { rejectValue: string }>(
   "auth/fetchMe",
   async (_, { rejectWithValue }) => {
@@ -47,7 +45,7 @@ export const fetchMe = createAsyncThunk<User, void, { rejectValue: string }>(
   },
 );
 
-// 🔑 Login (cookie set by backend)
+
 export const loginUser = createAsyncThunk<
   User,
   { email: string; password: string },
@@ -57,7 +55,7 @@ export const loginUser = createAsyncThunk<
     const res = await api.post("/auth/login", data, {
       withCredentials: true,
     });
-    //  console.log(res.data.user);
+
 
     return res.data.user;
   } catch (err: any) {
@@ -65,7 +63,7 @@ export const loginUser = createAsyncThunk<
   }
 });
 
-// 🚪 Logout (cookie cleared by backend)
+
 export const logoutUser = createAsyncThunk<
   boolean,
   void,
@@ -79,7 +77,6 @@ export const logoutUser = createAsyncThunk<
   }
 });
 
-/* ================= SLICE ================= */
 
 const authSlice = createSlice({
   name: "auth",
@@ -130,7 +127,7 @@ const authSlice = createSlice({
   },
 });
 
-/* ================= EXPORTS ================= */
+
 
 export const { clearAuthError } = authSlice.actions;
 export default authSlice.reducer;

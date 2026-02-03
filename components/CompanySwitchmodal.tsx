@@ -52,7 +52,7 @@ useEffect(() => {
     const res = await api.get("/user/companieslist", {
       withCredentials: true,
     });
-    console.log(res.data.data);
+    // console.log(res.data.data);
     
     setCompanies(res.data.data);
   };

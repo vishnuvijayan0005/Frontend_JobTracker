@@ -64,7 +64,7 @@ export default function MyJobs() {
   useEffect(() => {
     fetchJobs();
   }, []);
-
+  if (loading || showLoading) return <Loading text="Fetching your data..." />;
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -205,7 +205,7 @@ export default function MyJobs() {
           onJobAdded={fetchJobs} // refresh job list after adding
         />
       </div>
-      <Footer/>
+     
     </div>
   );
 }

@@ -16,6 +16,8 @@ import {
   Search,
   Icon,
   FileText,
+  ChartArea,
+  MessageCircleCodeIcon,
 } from "lucide-react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 
@@ -118,7 +120,9 @@ useEffect(() => {
                 }
               />
             </div>
-
+         
+            
+                
             {/* Profile */}
             <Menu as="div" className="relative">
               <MenuButton className="p-1 rounded-full hover:bg-gray-100">
@@ -143,22 +147,11 @@ useEffect(() => {
                 </MenuItem>
 
    
-     {/* <MenuItem>
-                  {({ active }) => (
-                    <button
-                      onClick={() => router.push("/saved-jobs")}
-                      className={`flex w-full items-center gap-3 px-5 py-2 text-sm ${
-                        active ? "bg-sky-50" : ""
-                      }`}
-                    >
-                     <Bookmark size={18} />Saved Jobs
-                    </button>
-                  )}
-                </MenuItem> */}
+
                  <MenuItem>
                   {({ active }) => (
                     <button
-                      onClick={() => router.push("/applied-jobs")}
+                      onClick={() => router.push("/user/applied")}
                       className={`flex w-full items-center gap-3 px-5 py-2 text-sm ${
                         active ? "bg-sky-50" : ""
                       }`}
@@ -182,6 +175,10 @@ useEffect(() => {
                 </MenuItem>
               </MenuItems>
             </Menu>
+              <div>
+
+              <MessageCircleCodeIcon/>
+                  </div>
           </div>
 
           {/* MOBILE TOGGLE */}
@@ -191,7 +188,9 @@ useEffect(() => {
           >
             {mobileOpen ? <X /> : <MenuIcon />}
           </button>
+          
         </div>
+        
       </nav>
 
       {/* ================= MOBILE MENU ================= */}

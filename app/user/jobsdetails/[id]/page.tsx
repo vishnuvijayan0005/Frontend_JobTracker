@@ -37,8 +37,6 @@ interface Job {
   salary: string;
   status: string;
   createdAt: string;
-
-  applied?: boolean; // ✅ track if user already applied
 }
 
 /* ================= PAGE ================= */
@@ -49,7 +47,7 @@ const Page = () => {
   const { id } = useParams();
 
   const { loading, isAuthenticated, user } = useSelector(
-    (state: Rootstate) => state.auth
+    (state: Rootstate) => state.auth,
   );
 
   const [showLoading, setShowLoading] = useState(true);
@@ -93,7 +91,7 @@ const Page = () => {
         });
 
         setJob(res.data.data);
-        setApplied(res.data.data.applied === true); // ✅ set applied state
+        setApplied(res.data.jobStatus === "applied");
       } catch (error) {
         toast.error("Failed to load job details");
       }
@@ -111,23 +109,26 @@ const Page = () => {
 
     try {
       await toast.promise(
-        api.post(`/user/addapplication/${jobId}`, {}, { withCredentials: true }),
+        api.post(
+          `/user/addapplication/${jobId}`,
+          {},
+          { withCredentials: true },
+        ),
         {
           loading: "Applying for job...",
-          success: (res) =>
-            res.data?.message || "Application submitted successfully 🎉",
+          success: (res) => {
+            return res.data?.message || "Application submitted successfully 🎉";
+          },
           error: (err) => {
             if (err.response?.status === 409) return "Already applied";
             if (err.response?.status === 404) return "Job not found";
             if (err.response?.status === 401) return "Please login";
             return "Something went wrong";
           },
-        }
+        },
       );
 
-      setApplied(true); // ✅ update UI after successful application
-    } catch (error) {
-      // toast already handles errors
+      setApplied(true); // ✅ update UI after success
     } finally {
       setApplying(false);
     }
@@ -144,6 +145,30 @@ const Page = () => {
   }
 
   /* ================= RENDER ================= */
+  const handleWithdraw = async (jobId: string) => {
+    try {
+      await toast.promise(
+        api.delete(`/user/withdrawapplication/${jobId}`, {
+          withCredentials: true,
+        }),
+        {
+          loading: "Withdrawing application...",
+          success: "Application withdrawn",
+          error: "Failed to withdraw",
+        },
+      );
+
+      // Update UI after withdraw
+      setApplied(false);
+      // Optionally refresh job details from backend
+      const res = await api.get(`/user/jobsdetails/${jobId}`, {
+        withCredentials: true,
+      });
+      setJob(res.data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -155,7 +180,6 @@ const Page = () => {
 
       <main className="flex-1">
         <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
           {/* ================= LEFT ================= */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header */}
@@ -194,7 +218,9 @@ const Page = () => {
             {job.requirements && (
               <div className="bg-white rounded-3xl shadow-sm p-8">
                 <h2 className="text-xl font-semibold mb-4">Requirements</h2>
-                <p className="text-gray-700 whitespace-pre-line">{job.requirements}</p>
+                <p className="text-gray-700 whitespace-pre-line">
+                  {job.requirements}
+                </p>
               </div>
             )}
 
@@ -202,7 +228,9 @@ const Page = () => {
             {job.qualifications && (
               <div className="bg-white rounded-3xl shadow-sm p-8">
                 <h2 className="text-xl font-semibold mb-4">Qualifications</h2>
-                <p className="text-gray-700 whitespace-pre-line">{job.qualifications}</p>
+                <p className="text-gray-700 whitespace-pre-line">
+                  {job.qualifications}
+                </p>
               </div>
             )}
 
@@ -236,7 +264,9 @@ const Page = () => {
             {/* Interview Process */}
             {job.interviewProcess && (
               <div className="bg-white rounded-3xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold mb-4">Interview Process</h2>
+                <h2 className="text-xl font-semibold mb-4">
+                  Interview Process
+                </h2>
                 <p className="text-gray-700">{job.interviewProcess}</p>
               </div>
             )}
@@ -280,8 +310,8 @@ const Page = () => {
                     applied
                       ? "bg-green-100 text-green-700 cursor-not-allowed"
                       : job.status !== "Open"
-                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      : "bg-sky-600 text-white hover:bg-sky-700"
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-sky-600 text-white hover:bg-sky-700"
                   }
                 `}
               >
@@ -289,10 +319,18 @@ const Page = () => {
               </button>
 
               {applied && (
-                <p className="mt-4 text-sm text-green-600 font-medium text-center">
-                  You’ve already applied for this job
-                </p>
-              )}
+  <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-2xl text-center flex flex-col items-center gap-3 shadow-sm">
+    <p className="text-green-800 font-medium">
+      You’ve already applied for this job
+    </p>
+    <button
+      onClick={() => handleWithdraw(job._id)}
+      className="w-full max-w-xs py-2 rounded-xl font-semibold text-lg bg-red-600 text-white hover:bg-red-700 transition-shadow shadow-sm hover:shadow-md"
+    >
+      Withdraw Application
+    </button>
+  </div>
+)}
 
               <div className="mt-6 text-xs text-gray-500 text-center">
                 Posted on {new Date(job.createdAt).toLocaleDateString()}

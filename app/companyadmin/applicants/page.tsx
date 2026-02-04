@@ -207,7 +207,7 @@ export default function ApplicantsPage() {
         <div className="md:hidden flex items-center justify-between mb-6">
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="p-2 rounded-lg border bg-white"
+            className="p-2 rounded-md  border hover:bg-gray-100"
           >
             <Menu size={20} />
           </button>

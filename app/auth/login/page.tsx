@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Key } from "lucide-react";
+import { Mail, Lock, Key, ArrowLeft } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store/store";
 import { loginUser } from "@/store/slice/auth/auth";
@@ -10,15 +10,14 @@ import toast, { Toaster } from "react-hot-toast";
 import { safeParse } from "valibot";
 import { LoginSchema } from "@/lib/validators/login.schema";
 
+import img1 from "@/public/banner1.png";
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Error messages for each field
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
   );
@@ -44,19 +43,15 @@ export default function LoginPage() {
         });
       });
 
-      // 3️⃣ Set errors to display under each input
       setErrors(fieldErrors);
       return;
     }
 
-    // 4️⃣ Clear previous errors if validation passed
     setErrors({});
 
-    // 5️⃣ Dispatch login action
     try {
       const user = await dispatch(loginUser({ email, password })).unwrap();
 
-      // 6️⃣ Redirect based on role
       if (user.role === "admin") {
         toast.success("Welcome Boss");
         router.replace("/admin");
@@ -75,17 +70,34 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left Side */}
-      <div className="hidden md:flex w-1/2 bg-sky-600 justify-center items-center">
-        <div className="text-center text-white p-10">
-          <h1 className="text-5xl font-bold mb-4">Welcome Back!</h1>
-          <p className="text-lg">
+      <div className="relative hidden md:flex w-1/2 justify-center items-center overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${img1.src})`,
+          }}
+        />
+
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
+
+        <button
+          onClick={() => router.push("/")}
+          className="absolute top-6 left-6 z-10 flex items-center gap-1 bg-white/20 backdrop-blur-md text-white px-3 py-2 rounded-full text-sm hover:bg-white/30 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Home
+        </button>
+
+        <div className="relative z-10 text-center text-white p-10 max-w-md">
+          <h1 className="text-5xl font-bold mb-4 leading-tight">
+            Welcome Back!
+          </h1>
+          <p className="text-lg text-white/90">
             Manage your job applications and track your dream career.
           </p>
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
       <div className="flex w-full md:w-1/2 justify-center items-center p-8 bg-white">
         <div className="w-full max-w-md space-y-6">
           <h2 className="text-3xl font-bold text-gray-800 text-center">
@@ -115,7 +127,7 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Password Input */}
+      
             <div className="relative">
               <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
               <input
@@ -134,7 +146,7 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Forgot password */}
+            
             <div className="text-right">
               <button
                 type="button"
@@ -145,7 +157,7 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Login button */}
+
             <button
               type="submit"
               className="w-full bg-sky-600 text-white py-3 rounded-xl font-semibold hover:bg-sky-700 transition"
@@ -154,14 +166,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Divider */}
           <div className="flex items-center justify-center gap-3 text-gray-400 text-sm">
             <span className="border-b w-1/4"></span>
             OR
             <span className="border-b w-1/4"></span>
           </div>
 
-          {/* Signup */}
           <p className="text-center text-gray-500">
             Don't have an account?{" "}
             <button

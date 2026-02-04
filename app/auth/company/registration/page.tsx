@@ -10,11 +10,13 @@ import {
   Phone,
   Globe,
   Layers,
+  ArrowLeft,
 } from "lucide-react";
 import api from "@/utils/baseUrl";
 import { safeParse } from "valibot";
 import { CompanyRegisterSchema } from "@/lib/validators/company-registration";
-
+import toast from "react-hot-toast";
+import img3 from "@/public/banner3.png";
 /* 🔹 Error keys MUST match schema */
 type Errors = Partial<Record<
   | "companyName"
@@ -94,43 +96,136 @@ export default function CompanyRegisterPage() {
       );
 
       if (res.data.success) {
-        alert("Company registered successfully!");
+        toast.success("Company registered successfully!");
         router.push("/auth/login");
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || "Registration failed");
+      toast.error(err.response?.data?.message || "Registration failed");
     }
   };
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden md:flex w-1/2 bg-sky-600 items-center justify-center text-white">
-        <div>
-          <h1 className="text-5xl font-bold">Welcome, Company!</h1>
-          <p className="mt-4 text-lg">Register & start hiring talent.</p>
+        <div className="relative hidden md:flex w-1/2 justify-center items-center overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${img3.src})`,
+          }}
+        />
+
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
+
+        <button
+          onClick={() => router.push("/")}
+          className="absolute top-6 left-6 z-10 flex items-center gap-1 bg-white/20 backdrop-blur-md text-white px-3 py-2 rounded-full text-sm hover:bg-white/30 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Home
+        </button>
+
+        <div className="relative z-10 text-center text-white p-10 max-w-md">
+          <h1 className="text-5xl font-bold mb-4 leading-tight">
+            Welcome Back!
+          </h1>
+          <p className="text-lg text-white/90">
+            Manage your job applications and track your dream career.
+          </p>
         </div>
       </div>
 
       <div className="w-full md:w-1/2 flex items-center justify-center p-8">
-        <form onSubmit={handleRegister} className="w-full max-w-md space-y-4">
-          <h2 className="text-3xl font-bold text-center">
-            Company Registration
-          </h2>
+      <form onSubmit={handleRegister} className="w-full max-w-md space-y-4">
+  <h2 className="text-3xl font-bold text-center">
+    Company Registration
+  </h2>
 
-          <Input icon={<Building2 size={18} />} value={companyName} onChange={setCompanyName} placeholder="Company Name" error={errors.companyName} />
-          <Input icon={<LocateIcon size={18} />} value={companyLocation} onChange={setCompanyLocation} placeholder="Company Location" error={errors.companyLocation} />
-          <Select value={category} onChange={setCategory} error={errors.category} />
-          <Input icon={<Phone size={18} />} value={phone} onChange={setPhone} placeholder="Phone Number" error={errors.phone} />
-          <Input icon={<Globe size={18} />} value={website} onChange={setWebsite} placeholder="Website (optional)" error={errors.website} />
-          <Input icon={<Mail size={18} />} value={email} onChange={setEmail} placeholder="Email" error={errors.email} />
-          <Input icon={<Lock size={18} />} value={password} onChange={setPassword} placeholder="Password" type="password" error={errors.password} />
-          <Input icon={<Lock size={18} />} value={confirmPassword} onChange={setConfirmPassword} placeholder="Confirm Password" type="password" error={errors.confirmPassword} />
+  <Input
+    icon={<Building2 size={18} />}
+    value={companyName}
+    onChange={setCompanyName}
+    placeholder="Company Name"
+    error={errors.companyName}
+  />
 
-          <button className="w-full bg-sky-600 text-white py-3 rounded-xl font-semibold">
-            Register Company
-          </button>
-        </form>
+  <Input
+    icon={<LocateIcon size={18} />}
+    value={companyLocation}
+    onChange={setCompanyLocation}
+    placeholder="Company Location"
+    error={errors.companyLocation}
+  />
+
+  <Select
+    value={category}
+    onChange={setCategory}
+    error={errors.category}
+  />
+
+  <Input
+    icon={<Phone size={18} />}
+    value={phone}
+    onChange={setPhone}
+    placeholder="Phone Number"
+    error={errors.phone}
+  />
+
+  <Input
+    icon={<Globe size={18} />}
+    value={website}
+    onChange={setWebsite}
+    placeholder="Website (optional)"
+    error={errors.website}
+  />
+
+  <Input
+    icon={<Mail size={18} />}
+    value={email}
+    onChange={setEmail}
+    placeholder="Email"
+    error={errors.email}
+  />
+
+  <Input
+    icon={<Lock size={18} />}
+    value={password}
+    onChange={setPassword}
+    placeholder="Password"
+    type="password"
+    error={errors.password}
+  />
+
+  <Input
+    icon={<Lock size={18} />}
+    value={confirmPassword}
+    onChange={setConfirmPassword}
+    placeholder="Confirm Password"
+    type="password"
+    error={errors.confirmPassword}
+  />
+
+  <button
+    type="submit"
+    className="w-full bg-sky-600 text-white py-3 rounded-xl font-semibold hover:bg-sky-700 transition"
+  >
+    Register Company
+  </button>
+
+  <p className="text-center text-gray-500 text-sm">
+    Already have an account?{" "}
+    <button
+      type="button"
+      onClick={() => router.push("/auth/login")}
+      className="text-sky-600 font-medium hover:underline"
+    >
+      Login
+    </button>
+  </p>
+</form>
+
+        
       </div>
+      
     </div>
   );
 }
@@ -200,6 +295,7 @@ function Select({ value, onChange, error }: SelectProps) {
           <option value="other">Other</option>
         </select>
       </div>
+      
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );

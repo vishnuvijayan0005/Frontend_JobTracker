@@ -1,20 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/utils/baseUrl";
+import toast from "react-hot-toast";
+
+/* ================= TYPES ================= */
+
+interface JobData {
+  _id?: string;
+  title: string;
+  location: string;
+  jobType: string;
+  salary?: string;
+  description: string;
+  requirements?: string;
+  qualifications?: string;
+  benefits?: string[];
+  seniorityLevel: string;
+  interviewProcess?: string;
+  experience?: string;
+  skills?: string[];
+  tags?: string[];
+}
 
 interface AddJobModalProps {
   isOpen: boolean;
   onClose: () => void;
   onJobAdded: () => void;
+  mode?: "add" | "edit";
+  initialData?: JobData | null;
 }
+
+/* ================= COMPONENT ================= */
 
 export default function AddJobModal({
   isOpen,
   onClose,
   onJobAdded,
+  mode = "add",
+  initialData = null,
 }: AddJobModalProps) {
+  /* ================= STATE ================= */
+
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("Full-time");
@@ -29,13 +57,35 @@ export default function AddJobModal({
   const [skills, setSkills] = useState("");
   const [tags, setTags] = useState("");
 
+  /* ================= PREFILL (EDIT MODE) ================= */
+
+  useEffect(() => {
+    if (mode === "edit" && initialData) {
+      setTitle(initialData.title);
+      setLocation(initialData.location);
+      setJobType(initialData.jobType);
+      setSalary(initialData.salary || "");
+      setDescription(initialData.description);
+      setRequirements(initialData.requirements || "");
+      setQualifications(initialData.qualifications || "");
+      setBenefits((initialData.benefits || []).join(", "));
+      setSeniorityLevel(initialData.seniorityLevel);
+      setInterviewProcess(initialData.interviewProcess || "");
+      setExperience(initialData.experience || "");
+      setSkills((initialData.skills || []).join(", "));
+      setTags((initialData.tags || []).join(", "));
+    }
+  }, [mode, initialData]);
+
+  /* ================= SUBMIT ================= */
+
   const handleSubmit = async () => {
     if (!title || !location || !description) {
-      alert("Please fill required fields: Title, Location, Description");
+      toast.error("Please fill required fields: Title, Location, Description");
       return;
     }
 
-    const newJob = {
+    const payload = {
       title,
       location,
       jobType,
@@ -43,38 +93,40 @@ export default function AddJobModal({
       description,
       requirements,
       qualifications,
-      benefits,
+      benefits: benefits.split(",").map((b) => b.trim()).filter(Boolean),
       seniorityLevel,
       interviewProcess,
       experience,
-      skills,
-      tags,
+      skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
+      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
     };
 
-    const res = await api.post("/companyadmin/postnewjob", { newJob });
+    try {
+      if (mode === "edit" && initialData?._id) {
+        const res=await api.put(
+          `/companyadmin/editjob/${initialData._id}`,
+          payload,
+          { withCredentials: true }
+        );
+        toast.success(res.data.message)
+      } else {
+       const res= await api.post(
+          "/companyadmin/postnewjob",
+          payload,
+          { withCredentials: true }
+        );
+        toast.success(res.data.message)
+      }
 
-    if (res.data.success) {
       onJobAdded();
       onClose();
-    } else {
-      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save job");
     }
-
-    // Reset
-    setTitle("");
-    setLocation("");
-    setJobType("Full-time");
-    setSalary("");
-    setDescription("");
-    setRequirements("");
-    setQualifications("");
-    setBenefits("");
-    setSeniorityLevel("Junior");
-    setInterviewProcess("");
-    setExperience("");
-    setSkills("");
-    setTags("");
   };
+
+  /* ================= UI ================= */
 
   return (
     <AnimatePresence>
@@ -87,15 +139,16 @@ export default function AddJobModal({
         >
           <motion.div
             className="bg-white rounded-2xl w-full max-w-lg p-6 mx-4 shadow-lg overflow-y-auto max-h-[90vh]"
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
+            exit={{ scale: 0.9, opacity: 0 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Add New Job</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {mode === "edit" ? "Edit Job" : "Add New Job"}
+            </h2>
 
             <div className="flex flex-col gap-3">
               <input
-                type="text"
                 placeholder="Job Title*"
                 className="border p-2 rounded-lg"
                 value={title}
@@ -111,9 +164,9 @@ export default function AddJobModal({
               />
 
               <textarea
-                placeholder="Job Requirements"
+                placeholder="Requirements"
                 className="border p-2 rounded-lg"
-                rows={3}
+                rows={2}
                 value={requirements}
                 onChange={(e) => setRequirements(e.target.value)}
               />
@@ -135,7 +188,6 @@ export default function AddJobModal({
               />
 
               <input
-                type="text"
                 placeholder="Location*"
                 className="border p-2 rounded-lg"
                 value={location}
@@ -143,15 +195,13 @@ export default function AddJobModal({
               />
 
               <input
-                type="text"
-                placeholder="Experience Required (e.g., 2–5 years)"
+                placeholder="Experience (e.g. 2–5 years)"
                 className="border p-2 rounded-lg"
                 value={experience}
                 onChange={(e) => setExperience(e.target.value)}
               />
 
               <input
-                type="text"
                 placeholder="Skills (comma separated)"
                 className="border p-2 rounded-lg"
                 value={skills}
@@ -159,15 +209,14 @@ export default function AddJobModal({
               />
 
               <input
-                type="text"
-                placeholder="Tags / Keywords (comma separated)"
+                placeholder="Tags (comma separated)"
                 className="border p-2 rounded-lg"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
               />
 
               <textarea
-                placeholder="Interview Process (e.g., HR → Tech → Manager)"
+                placeholder="Interview Process"
                 className="border p-2 rounded-lg"
                 rows={2}
                 value={interviewProcess}
@@ -175,8 +224,7 @@ export default function AddJobModal({
               />
 
               <input
-                type="text"
-                placeholder="Salary (optional)"
+                placeholder="Salary"
                 className="border p-2 rounded-lg"
                 value={salary}
                 onChange={(e) => setSalary(e.target.value)}
@@ -214,9 +262,9 @@ export default function AddJobModal({
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
               >
-                Add Job
+                {mode === "edit" ? "Update Job" : "Add Job"}
               </button>
             </div>
           </motion.div>

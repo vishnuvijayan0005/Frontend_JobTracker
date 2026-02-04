@@ -1,14 +1,30 @@
 "use client";
 
-import { Menu, Bell } from "lucide-react";
+import { Menu, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface NavbarProps {
   setSidebarOpen: (open: boolean) => void;
+  onSearch: (query: string) => void;
 }
 
-export default function CompanyNavbar({ setSidebarOpen }: NavbarProps) {
+export default function CompanyNavbar({
+  setSidebarOpen,
+  onSearch,
+}: NavbarProps) {
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(query.trim());
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [query]); // ✅ dependency ONLY on query
+
   return (
-    <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6">
+    <header className="h-16 bg-white border-b flex items-center px-4 md:px-6">
+      {/* Mobile menu */}
       <button
         className="md:hidden p-2 rounded-md hover:bg-gray-100"
         onClick={() => setSidebarOpen(true)}
@@ -16,16 +32,19 @@ export default function CompanyNavbar({ setSidebarOpen }: NavbarProps) {
         <Menu className="h-6 w-6" />
       </button>
 
-      <input
-        type="text"
-        placeholder="Search jobs or applicants..."
-        className="flex-1 mx-4 p-2 border rounded-lg text-sm hidden sm:block"
-      />
+      {/* Search */}
+      <div className="relative flex-1 mx-4 hidden sm:block">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 
-      {/* <div className="flex items-center gap-4">
-        <Bell className="h-5 w-5 text-gray-600 cursor-pointer" />
-        <div className="h-8 w-8 rounded-full bg-slate-200" />
-      </div> */}
+        <input
+          type="text"
+          placeholder="Search jobs..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm
+                     focus:ring-2 focus:ring-blue-500 outline-none"
+        />
+      </div>
     </header>
   );
 }

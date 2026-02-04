@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft } from "lucide-react";
 import api from "@/utils/baseUrl";
 import { safeParse, object, string, minLength, regex, nonEmpty, email as emailValidator } from "valibot";
 import { LoginSchema } from "@/lib/validators/login.schema";
-
+import toast from "react-hot-toast";
+import img2 from "@/public/banner2.png";
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -16,7 +17,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Field errors
+
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
@@ -24,16 +25,16 @@ export default function RegisterPage() {
     confirmPassword?: string;
   }>({});
 
-  // Valibot schema
+
   
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Reset errors
+
     setErrors({});
 
-    // 1️⃣ Validate inputs
+   
     const result = safeParse(LoginSchema, { email, password });
 
     const fieldErrors: Record<string, string> = {};
@@ -53,18 +54,15 @@ export default function RegisterPage() {
       });
     }
 
-    // 2️⃣ Check confirm password
     if (password !== confirmPassword) {
       fieldErrors.confirmPassword = "Passwords do not match";
     }
 
-    // If there are errors, show them
     if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
       return;
     }
 
-    // 3️⃣ Submit API request
     try {
       const response = await api.post(
         "/auth/registration",
@@ -73,28 +71,46 @@ export default function RegisterPage() {
       );
 
       if (response.data.success) {
-        alert("Registration successful! Please login.");
+        toast.success("Registration successful! Please login.");
         router.push("/auth/login");
       }
     } catch (error: any) {
       console.error(error.response?.data || error.message);
-      alert(error.response?.data?.message || "Registration failed");
+      toast.error(error.response?.data?.message || "Registration failed");
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left Side - Illustration */}
-      <div className="hidden md:flex w-1/2 bg-sky-600 justify-center items-center">
-        <div className="text-center text-white p-10">
-          <h1 className="text-5xl font-bold mb-4">Join JobTracker!</h1>
-          <p className="text-lg">
-            Create an account and start tracking your applications and dream jobs today.
+     <div className="relative hidden md:flex w-1/2 justify-center items-center overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${img2.src})`,
+          }}
+        />
+
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
+
+        <button
+          onClick={() => router.push("/")}
+          className="absolute top-6 left-6 z-10 flex items-center gap-1 bg-white/20 backdrop-blur-md text-white px-3 py-2 rounded-full text-sm hover:bg-white/30 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Home
+        </button>
+
+        <div className="relative z-10 text-center text-white p-10 max-w-md">
+          <h1 className="text-5xl font-bold mb-4 leading-tight">
+            Welcome Back!
+          </h1>
+          <p className="text-lg text-white/90">
+            Manage your job applications and track your dream career.
           </p>
         </div>
       </div>
 
-      {/* Right Side - Signup Form */}
+  
       <div className="flex w-full md:w-1/2 justify-center items-center p-8 bg-white">
         <div className="w-full max-w-md space-y-6">
           <h2 className="text-3xl font-bold text-gray-800 text-center">Create your account</h2>
@@ -175,6 +191,16 @@ export default function RegisterPage() {
             Already have an account?{" "}
             <button onClick={() => router.push("/auth/login")} className="text-sky-600 hover:underline">
               Login
+            </button>
+          </p>
+          <p className="text-center text-gray-500">
+            Are you a company?{" "}
+            <button
+              type="button"
+              onClick={() => router.push("/auth/company/registration")}
+              className="text-sky-600 hover:underline font-medium"
+            >
+              Register your company
             </button>
           </p>
         </div>

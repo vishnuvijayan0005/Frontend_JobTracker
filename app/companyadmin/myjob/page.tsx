@@ -82,7 +82,7 @@ export default function MyJobs() {
          
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-md bg-gray-200 hover:bg-gray-300 mr-3"
+            className="p-2 rounded-md  border hover:bg-gray-100"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -168,7 +168,7 @@ export default function MyJobs() {
 
                   <button
                     className="flex items-center gap-1 text-xs sm:text-sm font-medium text-sky-600 hover:text-sky-700 transition"
-                    onClick={() => router.push(`/companyadmin/job/${job._id}`)}
+                    onClick={() => router.push(`/companyadmin/myjob/${job._id}`)}
                   >
                     See details →
                   </button>

@@ -1,36 +1,130 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import CompanySidebar from "./CompanySidebar";
 import CompanyNavbar from "./CompanyNavbar";
-import { Briefcase, Users, UserCheck2, XCircle } from "lucide-react";
+import { Briefcase, UserCheck2, XCircle, Users2 } from "lucide-react";
+import api from "@/utils/baseUrl";
+
+/* ================= TYPES ================= */
+
+interface Job {
+  _id: string;
+  title: string;
+  jobType: string;
+  status: "Open" | "Closed";
+  createdAt: string;
+}
+
+interface DashboardData {
+  totalJobs: number;
+  totalActiveJobs: number;
+  totalApplicants: number;
+  shortlistedCandidates: number;
+  rejectedCandidates: number;
+  hiredCandidates: number;
+  jobs: Job[];
+}
+
+type StatColor = "blue" | "green" | "yellow" | "red";
+
+interface StatItem {
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  color: StatColor;
+}
+
+/* ================= PAGE ================= */
 
 export default function CompanyDashboard() {
+  const router = useRouter();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [searchResults, setSearchResults] = useState<Job[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const sidebarMargin = collapsed ? "md:ml-20" : "md:ml-64";
 
-  
-  const statsData = [
-    { title: "Active Jobs", value: "12", icon: <Briefcase className="h-5 w-5 text-blue-600" />, color: "blue" },
-    { title: "Total Applicants", value: "248", icon: <Users className="h-5 w-5 text-green-600" />, color: "green" },
-    { title: "Shortlisted", value: "36", icon: <UserCheck2 className="h-5 w-5 text-yellow-600" />, color: "yellow" },
-    { title: "Rejected", value: "112", icon: <XCircle className="h-5 w-5 text-red-600" />, color: "red" },
-  ];
+  /* ================= FETCH DASHBOARD ================= */
 
-  const recentJobs = [
-    { title: "Frontend Developer", type: "Full-time", applicants: 45, status: "Active" },
-    { title: "Backend Engineer", type: "Full-time", applicants: 60, status: "Active" },
-    { title: "UI/UX Designer", type: "Contract", applicants: 18, status: "Shortlisted" },
-    { title: "DevOps Engineer", type: "Full-time", applicants: 12, status: "Active" },
-    { title: "Data Analyst", type: "Part-time", applicants: 30, status: "Rejected" },
-  ];
+  const fetchDashboard = async () => {
+    try {
+      const res = await api.get("/companyadmin/getcompanydashboard", {
+        withCredentials: true,
+      });
+      setDashboard(res.data.data);
+    } catch (err) {
+      console.error("Dashboard fetch failed", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  /* ================= SEARCH ================= */
+
+  const handleSearch = async (query: string) => {
+    if (!query) {
+      setIsSearching(false);
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const res = await api.get("/companyadmin/fetchdashboardsearch", {
+        params: { search: query },
+        withCredentials: true,
+      });
+      setSearchResults(res.data.data.jobs || []);
+    } catch (err) {
+      console.error("Search failed", err);
+    }
+  };
+
+  /* ================= STATS ================= */
+
+  const statsData: StatItem[] = dashboard
+    ? [
+        {
+          title: "Active Jobs",
+          value: String(dashboard.totalActiveJobs ?? 0),
+          icon: <Briefcase className="h-5 w-5 text-blue-600" />,
+          color: "blue",
+        },
+        {
+          title: "Total Applications",
+          value: String(dashboard.totalApplicants ?? 0),
+          icon: <Users2 className="h-5 w-5 text-green-600" />,
+          color: "green",
+        },
+        {
+          title: "Shortlisted",
+          value: String(dashboard.shortlistedCandidates ?? 0),
+          icon: <UserCheck2 className="h-5 w-5 text-yellow-600" />,
+          color: "yellow",
+        },
+        {
+          title: "Rejected",
+          value: String(dashboard.rejectedCandidates ?? 0),
+          icon: <XCircle className="h-5 w-5 text-red-600" />,
+          color: "red",
+        },
+      ]
+    : [];
+
+  const jobsToShow = isSearching ? searchResults : dashboard?.jobs || [];
+
+  /* ================= UI ================= */
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-
-      
       <CompanySidebar
         isOpen={sidebarOpen}
         setIsOpen={setSidebarOpen}
@@ -38,64 +132,72 @@ export default function CompanyDashboard() {
         setCollapsed={setCollapsed}
       />
 
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarMargin} ${sidebarOpen ? "pointer-events-none md:pointer-events-auto" : ""}`}>
+      <div className={`flex-1 flex flex-col ${sidebarMargin}`}>
+        <CompanyNavbar
+          setSidebarOpen={setSidebarOpen}
+          onSearch={handleSearch}
+        />
 
-        <CompanyNavbar setSidebarOpen={setSidebarOpen} />
+        <main className="flex-1 p-6 overflow-y-auto">
+          <h1 className="text-3xl font-bold mb-6">Welcome Back, Admin</h1>
 
-        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 overflow-y-auto">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">
-            Welcome Back, Admin
-          </h1>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-4 sm:mb-6">
+          {/* STATS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {statsData.map((stat, idx) => (
-              <StatCard
-                key={idx}
-                title={stat.title}
-                value={stat.value}
-                icon={stat.icon}
-                color={stat.color as any}
-              />
+              <StatCard key={idx} {...stat} />
             ))}
           </div>
 
-          {/* Recent Jobs Table */}
-          <div className="bg-white rounded-xl shadow p-4 sm:p-5 md:p-6 lg:p-8 overflow-x-auto">
-            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-800">
-              Recent Jobs
+          {/* JOBS */}
+          <div className="bg-white rounded-xl shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">
+              {isSearching ? "Search Results" : "Recent Jobs"}
             </h2>
-            <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 text-left font-medium text-gray-500 uppercase">
-                    Job Title
-                  </th>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 text-left font-medium text-gray-500 uppercase">
-                    Type
-                  </th>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 text-left font-medium text-gray-500 uppercase">
-                    Applicants
-                  </th>
-                  <th className="px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 text-left font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {recentJobs.map((job, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition">
-                    <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 text-gray-700 font-medium">{job.title}</td>
-                    <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 text-gray-500">{job.type}</td>
-                    <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3 text-gray-500">{job.applicants}</td>
-                    <td className="px-2 sm:px-3 md:px-4 lg:px-6 py-1 sm:py-2 md:py-3">
-                      <span className={`px-2 py-0.5 text-xs sm:text-sm font-semibold rounded-full ${job.status === "Active" ? "bg-blue-600 text-white" : job.status === "Shortlisted" ? "bg-yellow-600 text-white" : "bg-red-600 text-white"}`}>
-                        {job.status}
-                      </span>
-                    </td>
+
+            {jobsToShow.length === 0 ? (
+              <p className="text-gray-500 text-sm">
+                {isSearching ? "No results found" : "No jobs posted yet"}
+              </p>
+            ) : (
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left">Job Title</th>
+                    <th className="px-4 py-2 text-left">Type</th>
+                    <th className="px-4 py-2 text-left">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {jobsToShow.map((job) => (
+                    <tr
+                      key={job._id}
+                      onClick={() =>
+                        router.push(`/companyadmin/myjob/${job._id}`)
+                      }
+                      className="border-t hover:bg-gray-50 cursor-pointer"
+                    >
+                      <td className="px-4 py-2 font-medium">
+                        {job.title}
+                      </td>
+                      <td className="px-4 py-2 text-gray-500">
+                        {job.jobType}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            job.status === "Open"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {job.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </main>
       </div>
@@ -103,16 +205,20 @@ export default function CompanyDashboard() {
   );
 }
 
+/* ================= STAT CARD ================= */
 
-interface StatCardProps {
+function StatCard({
+  title,
+  value,
+  icon,
+  color = "blue",
+}: {
   title: string;
   value: string;
   icon: React.ReactNode;
-  color?: "blue" | "green" | "yellow" | "red";
-}
-
-function StatCard({ title, value, icon, color = "blue" }: StatCardProps) {
-  const bgMap: Record<string, string> = {
+  color?: StatColor;
+}) {
+  const colors: Record<StatColor, string> = {
     blue: "bg-blue-50 text-blue-700",
     green: "bg-green-50 text-green-700",
     yellow: "bg-yellow-50 text-yellow-700",
@@ -120,11 +226,11 @@ function StatCard({ title, value, icon, color = "blue" }: StatCardProps) {
   };
 
   return (
-    <div className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-5 rounded-xl shadow hover:shadow-md transition ${bgMap[color]}`}>
-      <div className="p-2 sm:p-3 bg-white rounded-lg shadow">{icon}</div>
-      <div className="flex-1">
-        <p className="text-sm sm:text-base font-medium">{title}</p>
-        <p className="text-lg sm:text-2xl font-bold mt-1">{value}</p>
+    <div className={`flex items-center gap-4 p-4 rounded-xl ${colors[color]}`}>
+      <div className="p-3 bg-white rounded-lg shadow">{icon}</div>
+      <div>
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-2xl font-bold">{value}</p>
       </div>
     </div>
   );

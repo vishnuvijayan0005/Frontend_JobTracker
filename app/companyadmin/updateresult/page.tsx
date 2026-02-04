@@ -160,7 +160,7 @@ export default function UpdateResultPage() {
         <div className="md:hidden flex items-center gap-3 mb-6">
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="p-2 rounded-lg border bg-white"
+            className="p-2 rounded-md  border hover:bg-gray-100"
           >
             <Menu size={20} />
           </button>

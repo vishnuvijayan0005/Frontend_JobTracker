@@ -9,6 +9,7 @@ import { AppDispatch, Rootstate } from "@/store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import api from "@/utils/baseUrl";
+import toast from "react-hot-toast";
 
 export interface Companydetails {
   _id?: string;
@@ -34,7 +35,7 @@ export default function CompanyProfilePage() {
   const router = useRouter();
 
   const { loading, isAuthenticated, user } = useSelector(
-    (state: Rootstate) => state.auth
+    (state: Rootstate) => state.auth,
   );
 
   /* ================= AUTH ================= */
@@ -87,8 +88,13 @@ export default function CompanyProfilePage() {
 
   const handleSave = async () => {
     if (!company) return;
-    console.log(company);
-    
+    const res = await api.put(
+      "/companyadmin/editprofile",
+      { company },
+      { withCredentials: true },
+    );
+
+    toast.success(res.data.message);
     setIsSaving(true);
     setTimeout(() => {
       setIsEditing(false);
@@ -115,29 +121,26 @@ export default function CompanyProfilePage() {
       <main
         className={`flex-1 p-4 md:p-6 lg:p-10 transition-all duration-300 overflow-auto ${mainMargin}`}
       >
-      
-<div className="flex items-center mb-6 md:hidden">
-  <button
-    onClick={() => setIsSidebarOpen(true)}
-    className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 mr-3"
-  >
-    <Menu className="h-5 w-5" />
-  </button>
+        <div className="flex items-center mb-6 md:hidden">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 rounded-md  border hover:bg-gray-100"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
-  <h1 className="text-xl font-bold flex-1">My Company Profile</h1>
+          <h1 className="text-xl font-bold flex-1">My Company Profile</h1>
 
-  {!isEditing && (
-    <button
-      onClick={handleEdit}
-      className="flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 text-sm"
-    >
-      <Edit className="h-4 w-4" /> Edit
-    </button>
-  )}
-</div>
+          {!isEditing && (
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 text-sm"
+            >
+              <Edit className="h-4 w-4" /> Edit
+            </button>
+          )}
+        </div>
 
-
-        {/* Desktop Header */}
         <div className="hidden md:flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">My Company Profile</h1>
           {!isEditing && (
@@ -159,7 +162,7 @@ export default function CompanyProfilePage() {
               alt="Company Logo"
               className="h-32 w-32 rounded-xl object-cover border"
             /> */}
-   <Building2 size={80} /> 
+            <Building2 size={80} />
           </div>
 
           {/* Details */}
@@ -223,7 +226,11 @@ export default function CompanyProfilePage() {
                     className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
                     disabled={isSaving}
                   >
-                    {isSaving ? <Loading text="Saving..." size={18} /> : "Save Changes"}
+                    {isSaving ? (
+                      <Loading text="Saving..." size={18} />
+                    ) : (
+                      "Save Changes"
+                    )}
                   </button>
                   <button
                     onClick={() => setIsEditing(false)}

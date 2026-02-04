@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Key, ArrowLeft } from "lucide-react";
+import { Mail, Lock, ArrowLeft } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store/store";
 import { loginUser } from "@/store/slice/auth/auth";
@@ -11,16 +11,14 @@ import { safeParse } from "valibot";
 import { LoginSchema } from "@/lib/validators/login.schema";
 
 import img1 from "@/public/banner1.png";
+
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {},
-  );
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,20 +27,16 @@ export default function LoginPage() {
 
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-
       result.issues.forEach((issue) => {
         issue.path?.forEach((i) => {
           const key = i.key;
           if (key === "email" || key === "password") {
-            if (fieldErrors[key]) {
-              fieldErrors[key] += `, ${issue.message}`;
-            } else {
-              fieldErrors[key] = issue.message;
-            }
+            fieldErrors[key] = fieldErrors[key]
+              ? fieldErrors[key] + `, ${issue.message}`
+              : issue.message || "Invalid value";
           }
         });
       });
-
       setErrors(fieldErrors);
       return;
     }
@@ -69,84 +63,61 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <div className="relative hidden md:flex w-1/2 justify-center items-center overflow-hidden">
+    <div className="min-h-screen flex flex-col md:flex-row relative">
+      {/* ================= Banner ================= */}
+      <div className="relative w-full md:w-1/2 h-64 md:h-auto flex items-center justify-center">
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${img1.src})`,
-          }}
+          style={{ backgroundImage: `url(${img1.src})` }}
         />
-
         <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
 
+        {/* Back button */}
         <button
           onClick={() => router.push("/")}
-          className="absolute top-6 left-6 z-10 flex items-center gap-1 bg-white/20 backdrop-blur-md text-white px-3 py-2 rounded-full text-sm hover:bg-white/30 transition"
+          className="absolute top-6 left-6 z-20 flex items-center gap-1 bg-white/20 backdrop-blur-md text-white px-3 py-2 rounded-full text-sm hover:bg-white/30 transition"
         >
           <ArrowLeft className="h-4 w-4" />
           Home
         </button>
 
-        <div className="relative z-10 text-center text-white p-10 max-w-md">
-          <h1 className="text-5xl font-bold mb-4 leading-tight">
+        {/* Banner text */}
+        <div className="relative z-10 text-center px-6 md:px-10">
+          <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4 text-white">
             Welcome Back!
           </h1>
-          <p className="text-lg text-white/90">
+          <p className="text-sm md:text-lg text-white/90 max-w-md mx-auto">
             Manage your job applications and track your dream career.
           </p>
         </div>
       </div>
 
-      <div className="flex w-full md:w-1/2 justify-center items-center p-8 bg-white">
-        <div className="w-full max-w-md space-y-6">
-          <h2 className="text-3xl font-bold text-gray-800 text-center">
+      {/* ================= Form ================= */}
+      <div className="relative z-20 flex w-full md:w-1/2 justify-center items-center px-4 py-10 md:py-20">
+        <div className="w-full max-w-md bg-white/95 md:bg-white backdrop-blur-xl rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 text-center">
             Login to JobTracker
           </h2>
-          <p className="text-center text-gray-500">
-            Enter your credentials to access your account
-          </p>
+          <p className="text-center text-gray-500">Enter your credentials to access your account</p>
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            {/* Email Input */}
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`w-full border rounded-xl px-10 py-3 focus:outline-none focus:ring-2 transition ${
-                  errors.email
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-sky-500"
-                }`}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-              )}
-            </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Input
+              icon={<Mail size={18} />}
+              value={email}
+              onChange={setEmail}
+              placeholder="Email"
+              error={errors.email}
+              type="email"
+            />
+            <Input
+              icon={<Lock size={18} />}
+              value={password}
+              onChange={setPassword}
+              placeholder="Password"
+              error={errors.password}
+              type="password"
+            />
 
-      
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`w-full border rounded-xl px-10 py-3 focus:outline-none focus:ring-2 transition ${
-                  errors.password
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:ring-sky-500"
-                }`}
-              />
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-              )}
-            </div>
-
-            
             <div className="text-right">
               <button
                 type="button"
@@ -156,7 +127,6 @@ export default function LoginPage() {
                 Forgot password?
               </button>
             </div>
-
 
             <button
               type="submit"
@@ -181,6 +151,7 @@ export default function LoginPage() {
               Sign Up
             </button>
           </p>
+
           <p className="text-center text-gray-500">
             Are you a company?{" "}
             <button
@@ -195,6 +166,35 @@ export default function LoginPage() {
       </div>
 
       <Toaster position="top-center" reverseOrder={false} />
+    </div>
+  );
+}
+
+/* ================= Reusable Input ================= */
+type InputProps = {
+  icon: React.ReactNode;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  type?: string;
+  error?: string;
+};
+function Input({ icon, value, onChange, placeholder, type = "text", error }: InputProps) {
+  return (
+    <div>
+      <div className="relative">
+        <span className="absolute left-3 top-3 text-gray-400">{icon}</span>
+        <input
+          type={type}
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className={`w-full border rounded-xl px-10 py-3 focus:outline-none focus:ring-2 transition ${
+            error ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-sky-500"
+          }`}
+        />
+      </div>
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );
 }

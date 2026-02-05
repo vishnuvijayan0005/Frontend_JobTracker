@@ -87,7 +87,7 @@ export default function RegisterPage() {
         {/* Banner text */}
         <div className="relative z-10 text-center px-6 md:px-10">
           <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4 text-white">
-            Join JobTracker!
+            Join CareerNest!
           </h1>
           <p className="text-sm md:text-lg text-white/90 max-w-md mx-auto">
             Create an account and start tracking your applications and dream jobs today.

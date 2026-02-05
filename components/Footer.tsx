@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-6 md:flex md:justify-between md:items-center">
         {/* Left: Branding */}
         <div className="mb-4 md:mb-0">
-          <h2 className="text-lg font-bold text-gray-900">JobTracker</h2>
+          <h2 className="text-lg font-bold text-gray-900">CareerNest</h2>
           <p className="text-sm text-gray-500 mt-1">
             Find jobs, manage applications, and track company postings.
           </p>
@@ -35,7 +35,7 @@ export default function Footer() {
       {/* Bottom */}
       <div className="border-t border-gray-200">
         <p className="text-xs text-gray-400 text-center py-3">
-          &copy; {new Date().getFullYear()} JobTracker. All rights reserved.
+          &copy; {new Date().getFullYear()} CareerNest. All rights reserved.
         </p>
       </div>
     </footer>

@@ -1,9 +1,12 @@
 "use client";
 
+import { fetchCompanies } from "@/store/slice/company/companySlice";
+import { AppDispatch, Rootstate } from "@/store/store";
 import api from "@/utils/baseUrl";
 import { Building, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 interface Company {
   _id: string;
@@ -17,50 +20,26 @@ interface Props {
   onClose: () => void;
 }
 
-// const demoCompanies: Company[] = [
-//   {
-//     _id: "1",
-//     name: "TechNova",
-//     location: "Bangalore",
- 
-//   },
-//   {
-//     _id: "2",
-//     name: "Cloudify",
-//     location: "Remote",
-    
-//   },
-//   {
-//     _id: "3",
-//     name: "DesignHub",
-//     location: "Mumbai",
-  
-//   },
-// ];
 
 export default function CompanySwitcherModal({ isOpen, onClose }: Props) {
-  const [companies,setCompanies]=useState<Company[]>([])
-
+  // const [companies,setCompanies]=useState<Company[]>([])
+  const { companies, loading } = useSelector(
+    (state: Rootstate) => state.company
+  );
   const router = useRouter();
-const hasFetched = useRef(false);
 
+const dispatch=useDispatch<AppDispatch>()
 useEffect(() => {
-  if (hasFetched.current) return;
-  hasFetched.current = true;
+    if (isOpen && companies.length === 0) {
+      dispatch(fetchCompanies());
+    }
+  }, [isOpen, companies.length, dispatch]);
 
-  const fetchcompanies = async () => {
-    const res = await api.get("/user/companieslist", {
-      withCredentials: true,
-    });
-    // console.log(res.data.data);
-    
-    setCompanies(res.data.data);
-  };
-
-  fetchcompanies();
-}, []);
-// console.log(companies,"------><>");
-
+{loading && (
+  <p className="text-center py-4 text-sm text-gray-500">
+    Loading companies...
+  </p>
+)}
   if (!isOpen) return null;
 
   return (
@@ -87,7 +66,7 @@ useEffect(() => {
             <button
               key={company._id}
               onClick={() => {
-                // router.push(`/company/${company._id}`);
+                router.push(`/user/companies/${company._id}/view`);
                 onClose();
               }}
               className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition text-left"
@@ -109,7 +88,7 @@ useEffect(() => {
         <div className="border-t px-5 py-4">
           <button
             onClick={() => {
-              router.push("/companies");
+              router.push("/user/companies");
               onClose();
             }}
             className="w-full text-sm font-medium text-sky-600 hover:underline"

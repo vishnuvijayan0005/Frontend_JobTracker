@@ -16,7 +16,7 @@ import api from "@/utils/baseUrl";
 import { safeParse } from "valibot";
 import { CompanyRegisterSchema } from "@/lib/validators/company-registration";
 import toast from "react-hot-toast";
-import img3 from "@/public/banner3.png";
+import img3 from "@/public/meeting-room-office.jpg";
 
 /* Error type must match schema */
 type Errors = Partial<Record<
@@ -126,7 +126,7 @@ export default function CompanyRegisterPage() {
         {/* Banner text */}
         <div className="relative z-10 text-center px-6 md:px-10">
           <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4 text-white">
-            Welcome to JobTracker!
+            Welcome to CareerNest!
           </h1>
           <p className="text-sm md:text-lg text-white/90 max-w-md mx-auto">
             Register your company and start hiring top talent today.

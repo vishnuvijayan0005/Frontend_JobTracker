@@ -9,7 +9,7 @@ export default function Navbar() {
 
   const navItems = [
     { name: "Home", href: "/" },
-    { name: "Jobs", href: "/jobs" },
+    { name: "Jobs", href: "/nonuser/Jobs" },
     { name: "Companies", href: "/companies" },
   ];
 
@@ -19,7 +19,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
-            JobTrack
+           CareerNest
           </div>
 
           {/* Desktop Menu */}
@@ -74,7 +74,7 @@ export default function Navbar() {
                 className="w-full text-center px-4 py-2 rounded-lg font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition"
               >
                 {item.name}
-                adsf
+               
               </Link>
             ))}
             <div className="flex flex-col w-full space-y-2">

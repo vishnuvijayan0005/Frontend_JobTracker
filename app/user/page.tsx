@@ -9,6 +9,7 @@ import { AppDispatch, Rootstate } from "@/store/store";
 import { fetchMe } from "@/store/slice/auth/auth";
 import toast, { Toaster } from "react-hot-toast";
 import Footer from "@/components/Footer";
+import JobSearch from "@/components/SearchComponent";
 
 export default function Home() {
   const router = useRouter();
@@ -91,6 +92,11 @@ useEffect(() => {
 
   if (!isAuthenticated || !user) return null;
 
+const jobs = [
+  { _id: "1", title: "Frontend Developer", companyName: "Google", location: "Bangalore", salary: "₹50k-80k" },
+  { _id: "2", title: "Backend Engineer", companyName: "Amazon", location: "Hyderabad", salary: "₹60k-90k" },
+  { _id: "3", title: "Fullstack Developer", companyName: "Microsoft", location: "Pune" },
+];
 
   return (
    <div className="min-h-screen flex flex-col bg-gray-50">
@@ -99,10 +105,10 @@ useEffect(() => {
 
   {/* Main Content (takes remaining height) */}
   <main className="flex-1 max-w-7xl mx-auto p-6 w-full">
-    <h1 className="text-2xl font-bold">
+    {/* <h1 className="text-2xl font-bold">
       Welcome, {user.name || "User"}!
-    </h1>
-    {/* More content here */}
+    </h1> */}
+<JobSearch />
   </main>
 
   {/* Footer (always at bottom) */}

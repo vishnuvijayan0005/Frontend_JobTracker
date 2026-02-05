@@ -96,7 +96,7 @@ export default function LoginPage() {
       <div className="relative z-20 flex w-full md:w-1/2 justify-center items-center px-4 py-10 md:py-20">
         <div className="w-full max-w-md bg-white/95 md:bg-white backdrop-blur-xl rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 text-center">
-            Login to JobTracker
+            Login to CareerNest
           </h2>
           <p className="text-center text-gray-500">Enter your credentials to access your account</p>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -11,13 +11,13 @@ import {
   LogOut,
   Settings,
   Building2,
-  Bookmark,
   X,
   Search,
-  Icon,
   FileText,
-  ChartArea,
   MessageCircleCodeIcon,
+  MapPin,
+  Bookmark,
+  Settings2,
 } from "lucide-react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 
@@ -25,6 +25,16 @@ import Loading from "./Loading";
 import CompanySwitcherModal from "./CompanySwitchmodal";
 import { logoutUser } from "@/store/slice/auth/auth";
 import { AppDispatch, Rootstate } from "@/store/store";
+import api from "@/utils/baseUrl";
+
+/* ================= TYPES ================= */
+interface Job {
+  _id: string;
+  title: string;
+  companyName: string;
+  location: string;
+  jobType: string;
+}
 
 export default function UserNavbar() {
   const router = useRouter();
@@ -33,7 +43,13 @@ export default function UserNavbar() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
+
+  /* ===== SEARCH STATE ===== */
   const [search, setSearch] = useState("");
+  const [results, setResults] = useState<Job[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const searchRef = useRef<HTMLDivElement | null>(null);
 
   const navItems = [
     { icon: <Home size={18} />, text: "Home", path: "/user" },
@@ -43,37 +59,91 @@ export default function UserNavbar() {
       text: "Companies",
       action: () => setCompanyOpen(true),
     },
-
+    {
+      icon: <Bookmark size={18} />,
+      text: "Applied Jobs",
+      path: "/user/applied",
+    },
+    {
+      icon: <Settings2 size={18} />,
+      text: "Profile View",
+      path: "/user/profile/profileview",
+    },
   ];
 
-useEffect(() => {
-  const handleResize = () => {
-    if (window.innerWidth >= 768) {
-      setMobileOpen(false);
-      document.body.style.overflow = "";
-    }
-  };
 
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
+  useEffect(() => {
+    if (!search.trim()) {
+      setResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await api.get("/user/fetchsearch", {
+          params: { search, limit: 5 },
+        });
+        setResults(res.data?.data || []);
+        setShowResults(true);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search]);
+
+
+  useEffect(() => {
+    if (mobileOpen) return;
+
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [mobileOpen]);
+
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
     router.replace("/");
   };
-  const nav = (item: (typeof navItems)[0]) => {
-    if (item.action) {
-      item.action();
-      setMobileOpen(false);
-      return;
-    }
 
-    if (item.path) {
-      router.push(item.path);
-      setCompanyOpen(false);
-      setMobileOpen(false);
-    }
+  const nav = (item: (typeof navItems)[0]) => {
+    if (item.action) item.action();
+    if (item.path) router.push(item.path);
+    setMobileOpen(false);
+  };
+
+  const goToJob = (id: string) => {
+    setSearch("");
+    setShowResults(false);
+    setMobileOpen(false);
+    router.push(`/user/jobsdetails/${id}`);
+  };
+
+  const handleEnterSearch = () => {
+    if (!search.trim()) return;
+    setShowResults(false);
+    setMobileOpen(false);
+    router.push(`/user/jobs?search=${encodeURIComponent(search)}`);
+    setSearch("");
   };
 
   if (loading) return <Loading text="Loading..." />;
@@ -81,23 +151,23 @@ useEffect(() => {
 
   return (
     <>
-      {/* ================= NAVBAR ================= */}
+   
       <nav className="sticky top-0 z-[1000] w-full bg-white/90 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          {/* Logo */}
+       
           <div
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/user")}
             className="flex items-center gap-3 cursor-pointer"
           >
             <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-2xl flex items-center justify-center">
               <span className="text-white font-bold text-lg">J</span>
             </div>
-            <h1 className="text-xl font-bold">JobTracker</h1>
+            <h1 className="text-xl font-bold">CareerNest</h1>
           </div>
 
-          {/* DESKTOP NAV */}
-          <div className="hidden md:flex items-center gap-6">
-            {navItems.map((item, idx) => (
+         
+          <div className="hidden md:flex items-center gap-6 relative">
+            {navItems.slice(0, 3).map((item, idx) => (
               <button
                 key={idx}
                 onClick={() => nav(item)}
@@ -107,152 +177,166 @@ useEffect(() => {
               </button>
             ))}
 
-            {/* Search */}
-            <div className="flex items-center bg-gray-100 rounded-full px-3 py-1 max-w-xs w-full">
-              <Search size={16} className="text-gray-500" />
-              <input
-                className="bg-transparent outline-none px-2 text-sm flex-1"
-                placeholder="Search jobs..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && handleSearch(router, search, setSearch)
-                }
-              />
+            <div ref={searchRef} className="relative w-72">
+              <div className="flex items-center bg-gray-100 rounded-full px-4 py-2">
+                <Search size={16} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onFocus={() => search && setShowResults(true)}
+                  onKeyDown={(e) => e.key === "Enter" && handleEnterSearch()}
+                  placeholder="Search jobs..."
+                  className="bg-transparent outline-none px-2 text-sm flex-1"
+                />
+              </div>
+
+         {showResults && (
+  <div className="absolute top-12 w-full bg-white rounded-xl shadow-xl border z-50 max-h-80 overflow-auto">
+    {results.length === 0 ? (
+      <p className="p-4 text-sm text-gray-500 text-center">
+        No jobs found
+      </p>
+    ) : (
+      <>
+        {results.map((job) => (
+          <div
+            key={job._id}
+            onClick={() => goToJob(job._id)}
+            className="p-4 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+          >
+            <p className="font-semibold">{job.title}</p>
+            <p className="text-xs text-gray-500">{job.companyName}</p>
+            <div className="flex gap-3 text-xs text-gray-400 mt-1">
+              <span className="flex items-center gap-1">
+                <MapPin size={12} /> {job.location}
+              </span>
+              <span className="flex items-center gap-1">
+                <Briefcase size={12} /> {job.jobType}
+              </span>
             </div>
-         
-            
-                
-            {/* Profile */}
+          </div>
+        ))}
+
+        {/* ✅ VIEW MORE */}
+        <button
+          onClick={() => {
+            setShowResults(false);
+            router.push(`/user/jobs?search=${encodeURIComponent(search)}`);
+            setSearch("");
+          }}
+          className="w-full py-3 text-sm font-medium text-sky-600 hover:bg-gray-50 border-t"
+        >
+          View more jobs →
+        </button>
+      </>
+    )}
+  </div>
+)}
+
+            </div>
+
             <Menu as="div" className="relative">
-              <MenuButton className="p-1 rounded-full hover:bg-gray-100">
+              <MenuButton>
                 <UserCircle size={36} />
               </MenuButton>
-              <MenuItems className="absolute right-0 mt-3 w-64 rounded-2xl bg-white shadow-xl border z-[9999]">
-                <div className="px-5 py-4 bg-gray-50 border-b">
-                  <p className="font-semibold text-sm truncate">{user.email}</p>
-                  <p className="text-xs text-gray-500">{user.name}</p>
-                </div>
+              <MenuItems className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border">
                 <MenuItem>
-                  {({ active }) => (
-                    <button
-                      onClick={() => router.push("/user/profile/profileview")}
-                      className={`flex w-full items-center gap-3 px-5 py-2 text-sm ${
-                        active ? "bg-sky-50" : ""
-                      }`}
-                    >
-                      <Settings size={18} /> Profile
-                    </button>
-                  )}
-                </MenuItem>
-
-   
-
-                 <MenuItem>
-                  {({ active }) => (
-                    <button
-                      onClick={() => router.push("/user/applied")}
-                      className={`flex w-full items-center gap-3 px-5 py-2 text-sm ${
-                        active ? "bg-sky-50" : ""
-                      }`}
-                    >
-                     <FileText size={18}/>Applied Jobs
-                    </button>
-                  )}
+                  <button
+                    onClick={() => router.push("/user/profile/profileview")}
+                    className="flex w-full gap-3 px-5 py-2 text-sm"
+                  >
+                    <Settings size={18} /> Profile
+                  </button>
                 </MenuItem>
                 <MenuItem>
-                  {({ active }) => (
-                    <button
-                      onClick={handleLogout}
-                      className={`flex w-full items-center gap-3 px-5 py-2 text-sm text-red-600 ${
-                        active ? "bg-red-50" : ""
-                      }`}
-                    >
-                      <LogOut size={18} /> Logout
-                    </button>
-
-                  )}
+                  <button
+                    onClick={() => router.push("/user/applied")}
+                    className="flex w-full gap-3 px-5 py-2 text-sm"
+                  >
+                    <FileText size={18} /> Applied Jobs
+                  </button>
+                </MenuItem>
+                <MenuItem>
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full gap-3 px-5 py-2 text-sm text-red-600"
+                  >
+                    <LogOut size={18} /> Logout
+                  </button>
                 </MenuItem>
               </MenuItems>
             </Menu>
-              <div>
 
-              <MessageCircleCodeIcon/>
-                  </div>
+            <MessageCircleCodeIcon />
           </div>
 
-          {/* MOBILE TOGGLE */}
-          <button
-            onClick={() => setMobileOpen((p) => !p)}
-            className="md:hidden"
-          >
-            {mobileOpen ? <X /> : <MenuIcon />}
+          <button onClick={() => setMobileOpen(true)} className="md:hidden">
+            <MenuIcon />
           </button>
-          
         </div>
-        
       </nav>
 
-      {/* ================= MOBILE MENU ================= */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          {/* Overlay */}
+        <div className="fixed inset-0 z-[9999] md:hidden">
           <div
-            className="absolute inset-0 bg-black/30"
+            className="absolute inset-0 bg-black/40"
             onClick={() => setMobileOpen(false)}
           />
 
-          {/* Drawer */}
-          <div className="absolute right-0 top-0 h-full w-80 sm:w-72 bg-white shadow-xl p-6 flex flex-col gap-4 overflow-y-auto">
-            {/* USER INFO + PROFILE */}
-            <div className="flex flex-col border-b pb-3 gap-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="font-semibold text-sm truncate">{user.email}</p>
-                  <p className="text-xs text-gray-500">{user.role}</p>
-                </div>
-                <button onClick={() => setMobileOpen(false)}>
-                  <X />
-                </button>
-              </div>
-
-              <button
-                onClick={() => router.push("/profile")}
-                className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-sm"
-              >
-                <Settings size={16} /> Profile
-              </button>
-
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-50 text-sm text-red-600"
-              >
-                <LogOut size={16} /> Logout
-              </button>
+          <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl flex flex-col overflow-y-auto">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h2 className="font-semibold text-lg">Menu</h2>
+              <X onClick={() => setMobileOpen(false)} />
             </div>
 
-            {/* NAV LINKS */}
-            {navItems.map((item, idx) => (
-              <MobileBtn
-                key={idx}
-                icon={item.icon}
-                text={item.text}
-                onClick={() => nav(item)}
-              />
-            ))}
-
             {/* Mobile Search */}
-            <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2 mt-3 w-full">
-              <Search size={16} />
-              <input
-                className="bg-transparent outline-none px-2 text-sm flex-1"
-                placeholder="Search jobs..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && handleSearch(router, search, setSearch)
-                }
-              />
+            <div className="px-5 py-4 border-b">
+              <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2">
+                <Search size={16} />
+                <input
+                  className="bg-transparent outline-none px-2 text-sm flex-1"
+                  placeholder="Search jobs..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setShowResults(true);
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleEnterSearch()}
+                />
+              </div>
+
+              {showResults && (
+                <div className="mt-3 bg-white rounded-xl border max-h-64 overflow-auto">
+                  {results.map((job) => (
+                    <div
+                      key={job._id}
+                      onClick={() => goToJob(job._id)}
+                      className="p-3 border-b hover:bg-gray-50 cursor-pointer"
+                    >
+                      <p className="text-sm font-medium">{job.title}</p>
+                      <p className="text-xs text-gray-500">{job.companyName}</p>
+                    </div>
+                  ))}
+                     <button
+          onClick={()=>router.push("/user/jobs")}
+          className="w-full py-3 text-sm font-medium text-sky-600 hover:bg-gray-50"
+        >
+          View more  →
+        </button>
+                </div>
+              )}
+            </div>
+
+            <div className="px-5 py-4 flex flex-col gap-3">
+              {navItems.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => nav(item)}
+                  className="flex gap-3 py-2 text-sm"
+                >
+                  {item.icon} {item.text}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -263,23 +347,5 @@ useEffect(() => {
         onClose={() => setCompanyOpen(false)}
       />
     </>
-  );
-}
-
-/* ================= HELPERS ================= */
-function handleSearch(router: any, search: string, setSearch: any) {
-  if (!search.trim()) return;
-  router.push(`/jobs?search=${encodeURIComponent(search)}`);
-  setSearch("");
-}
-
-function MobileBtn({ icon, text, onClick }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-3 py-2 text-sm w-full"
-    >
-      {icon} {text}
-    </button>
   );
 }

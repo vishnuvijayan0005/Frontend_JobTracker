@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,15 +11,16 @@ export default function Navbar() {
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Jobs", href: "/nonuser/Jobs" },
-    { name: "Companies", href: "/companies" },
+    { name: "Companies", href: "/nonuser/companies" },
   ];
+  const router=useRouter()
 
   return (
     <nav className="backdrop-blur-md bg-white/80 shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex-shrink-0 text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
+          <div className="flex-shrink-0 text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent" onClick={()=>router.push("/")}>
            CareerNest
           </div>
 

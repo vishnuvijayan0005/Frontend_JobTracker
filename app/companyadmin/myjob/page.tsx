@@ -11,6 +11,7 @@ import { fetchMe } from "@/store/slice/auth/auth";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, Rootstate } from "@/store/store";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function MyJobs() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -58,7 +59,24 @@ export default function MyJobs() {
     fetchJobs();
   }, []);
 
-  if (loading || showLoading) return <Loading text="Fetching your data..." />;
+    if (loading || showLoading) {
+  return (
+    <div className="min-h-screen flex">
+      
+     
+      <CompanySidebar
+        isOpen={sidebarOpen}
+        setIsOpen={setSidebarOpen}
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+      />
+
+      <div className="flex-1 flex items-center justify-center">
+        <Loading text="Loading ..." />
+      </div>
+    </div>
+  );
+}
 
   const sidebarMargin = collapsed ? "md:ml-20" : "md:ml-64";
 
@@ -148,11 +166,19 @@ export default function MyJobs() {
                     onClick={async () => {
                       try {
                         const newStatus = job.status === "Open" ? "Closed" : "Open";
-                        await api.patch(
+                       const res= await api.patch(
                           `/companyadmin/job/${job._id}/status`,
                           { status: newStatus },
                           { withCredentials: true }
                         );
+                        console.log(res.data);
+                        
+                        if(res.data.success){
+                          toast.success(res.data.message)
+                        }
+                        else{
+                          toast.error(res.data.message)
+                        }
                         setJobs((prev) =>
                           prev.map((j) =>
                             j._id === job._id ? { ...j, status: newStatus } : j

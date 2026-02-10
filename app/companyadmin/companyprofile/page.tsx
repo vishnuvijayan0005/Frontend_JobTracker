@@ -105,7 +105,23 @@ export default function CompanyProfilePage() {
   const mainMargin = sidebarCollapsed ? "md:ml-20" : "md:ml-64";
 
   if (loading || showLoading || !company)
-    return <Loading text="Loading company..." />;
+    {
+  return (
+    <div className="min-h-screen flex">
+      
+     <CompanySidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+      />
+
+      <div className="flex-1 flex items-center justify-center">
+        <Loading text="Loading ..." />
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="flex min-h-screen bg-gray-50">

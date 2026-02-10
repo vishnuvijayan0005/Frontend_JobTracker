@@ -12,6 +12,7 @@ interface JobData {
   title: string;
   location: string;
   jobType: string;
+  jobMode:string;
   salary?: string;
   description: string;
   requirements?: string;
@@ -46,6 +47,8 @@ export default function AddJobModal({
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("Full-time");
+  const  [jobMode, setJobMode] = useState("On-Site");
+ 
   const [salary, setSalary] = useState("");
   const [description, setDescription] = useState("");
   const [requirements, setRequirements] = useState("");
@@ -65,6 +68,7 @@ export default function AddJobModal({
       setLocation(initialData.location);
       setJobType(initialData.jobType);
       setSalary(initialData.salary || "");
+      setJobMode(initialData.jobMode);
       setDescription(initialData.description);
       setRequirements(initialData.requirements || "");
       setQualifications(initialData.qualifications || "");
@@ -90,6 +94,7 @@ export default function AddJobModal({
       location,
       jobType,
       salary,
+       jobMode,
       description,
       requirements,
       qualifications,
@@ -240,6 +245,19 @@ export default function AddJobModal({
                 <option>Internship</option>
                 <option>Contract</option>
               </select>
+              <select
+                value={jobMode}
+                onChange={(e) =>
+                  setJobMode(e.target.value as JobData["jobMode"])
+                }
+                className="border p-2 rounded-lg"
+              >
+                <option value="Remote">Remote</option>
+                <option value="Onsite">Onsite</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Field Based">Field Based</option>
+              </select>
+
 
               <select
                 value={seniorityLevel}

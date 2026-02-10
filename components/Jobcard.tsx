@@ -11,6 +11,7 @@ interface JobCardProps {
     salary?: string;
     companyName?: string;
     createdAt?: string;
+    jobMode:string;
   };
   onClick?: () => void;
 }
@@ -64,6 +65,10 @@ export default function JobCard({ job, onClick }: JobCardProps) {
         <div className="flex items-center gap-2">
           <Briefcase className="h-4 w-4 text-gray-400" />
           <span>{job.jobType}</span>
+        </div>
+         <div className="flex items-center gap-2">
+          <Briefcase className="h-4 w-4 text-gray-400" />
+          <span>{job.jobMode}</span>
         </div>
 
         <div className="flex items-center gap-2 font-medium text-gray-800">

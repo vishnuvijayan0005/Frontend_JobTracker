@@ -12,35 +12,39 @@ import Loading from "@/components/Loading";
 import api from "@/utils/baseUrl";
 import Footer from "@/components/Footer";
 
-interface Job {
+export interface Job {
   _id: string;
   title: string;
-  description: string;
-  experience: number;
   jobType: string;
   location: string;
   salary: string;
-  skills: string[];
-  status: string;
-  company: string;
   companyName: string;
   createdAt: string;
-  updatedAt: string;
+  status:string;
+  jobMode:string
 }
 
 const JobsList = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const [jobs, setJobs] = useState<Job[]>([]);
+
   const { loading, isAuthenticated, user } = useSelector(
     (state: Rootstate) => state.auth
   );
+
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [showLoading, setShowLoading] = useState(true);
 
-  // Pagination state
+  /* 🔍 Search & Filter */
+  const [search, setSearch] = useState("");
+  const [jobType, setJobType] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [jobMode, setJobMode] = useState("");
+  /* Pagination */
   const [currentPage, setCurrentPage] = useState(1);
-  const jobsPerPage = 5; // Show 5 jobs per page
+  const jobsPerPage = 5;
 
+  /* ================= AUTH ================= */
   useEffect(() => {
     dispatch(fetchMe());
   }, [dispatch]);
@@ -57,56 +61,53 @@ const JobsList = () => {
 
     if (user?.isprofilefinished === false && !toastShown.current) {
       toastShown.current = true;
-      toast.custom((t) => (
-        <div
-          className={`${
-            t.visible ? "animate-enter" : "animate-leave"
-          } max-w-md w-full bg-white shadow-xl rounded-2xl pointer-events-auto flex border`}
-        >
-          <div className="w-2 bg-red-600 rounded-l-2xl" />
-          <div className="flex-1 p-4">
-            <p className="text-sm font-semibold text-gray-800">
-              Profile Incomplete
-            </p>
-            <p className="text-sm text-gray-600 mt-1">
-              Please complete your profile before continuing.
-            </p>
-
-            <div className="mt-3 flex gap-3">
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                className="text-sm font-medium text-gray-500 hover:text-gray-700"
-              >
-                Dismiss
-              </button>
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  router.push("/user/profile");
-                }}
-                className="text-sm font-medium text-sky-600 hover:underline"
-              >
-                Complete now
-              </button>
-            </div>
-          </div>
-        </div>
-      ));
+      toast.error("Please complete your profile to continue");
     }
 
-    const timer = setTimeout(() => setShowLoading(false), 1500);
+    const timer = setTimeout(() => setShowLoading(false), 800);
     return () => clearTimeout(timer);
   }, [loading, isAuthenticated, user]);
 
+  /* ================= FETCH JOBS (with debounce) ================= */
+  const fetchJobs = async (initial = false) => {
+    initial ? setShowLoading(true) : setSearching(true);
+
+    try {
+      const res = await api.get("/user/fetchSearch", {
+        params: {
+          search,
+          type: jobType,
+          jobMode:jobMode
+        },
+      });
+
+      setJobs(res.data?.data || []);
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(err);
+      setJobs([]);
+    } finally {
+      initial ? setShowLoading(false) : setSearching(false);
+    }
+  };
+
+  /* Initial load */
   useEffect(() => {
-    const fetchJobs = async () => {
-      const res = await api.get("/user/getjobs");
-      setJobs(res.data.data);
-    };
-    fetchJobs();
+    fetchJobs(true);
   }, []);
 
-  if (loading || showLoading) return <Loading text="Fetching your data..." />;
+  /* 🔑 Debounce search & filter */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchJobs(false);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search, jobType]);
+
+  if (loading || showLoading) {
+    return <Loading text="Fetching your data..." />;
+  }
 
   if (!isAuthenticated || !user) return null;
 
@@ -114,85 +115,102 @@ const JobsList = () => {
     router.push(`/user/jobsdetails/${id}`);
   };
 
-  // Pagination calculations
+  /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(jobs.length / jobsPerPage);
   const indexOfLastJob = currentPage * jobsPerPage;
-  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
-  const currentJobs = jobs.slice(indexOfFirstJob, indexOfLastJob);
+  const currentJobs = jobs.slice(
+    indexOfLastJob - jobsPerPage,
+    indexOfLastJob
+  );
 
   return (
-<div className="min-h-screen flex flex-col bg-gray-50">
-  <UserNavbar />
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <UserNavbar />
 
-  {/* MAIN CONTENT */}
-  <main className="flex-1">
-    <div className="max-w-5xl mx-auto px-4 py-6 flex min-h-full flex-col">
-      <h1 className="text-2xl font-bold mb-4">Latest Jobs</h1>
+      <main className="flex-1">
+        <div className="max-w-5xl mx-auto px-4 py-6 flex min-h-full flex-col">
+          <h1 className="text-2xl font-bold mb-4">Latest Jobs</h1>
 
-      {/* Job Cards */}
-      <div className="space-y-4">
-        {currentJobs.map((job) => (
-          <JobCard
-            key={job._id}
-            job={job}
-            onClick={() => handlejobrouting(job._id)}
-          />
-        ))}
-      </div>
+          {/* 🔍 Search & Filter */}
+          <div className="flex flex-wrap gap-3 mb-6 items-center">
+            <input
+              type="text"
+              placeholder="Search jobs, company, location"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="px-4 py-2 rounded-lg border bg-white text-sm w-full sm:w-64"
+            />
 
-      {/* Pagination pushed to bottom */}
-      {totalPages > 1 && (
-        <div className="mt-auto pt-12 flex justify-center">
-          <div className="flex items-center gap-1 rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-gray-200">
-            
-            {/* Prev */}
-            <button
-              onClick={() => setCurrentPage((p) => p - 1)}
-              disabled={currentPage === 1}
-              className="flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition
-                hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+            <select
+              value={jobType}
+              onChange={(e) => setJobType(e.target.value)}
+              className="px-4 py-2 rounded-lg border bg-white text-sm"
             >
-              ← Prev
-            </button>
-
-            {/* Pages */}
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition
-                    ${
-                      page === currentPage
-                        ? "bg-sky-600 text-white shadow-md shadow-sky-200"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                >
-                  {page}
-                </button>
-              ))}
-            </div>
-
-            {/* Next */}
-            <button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage === totalPages}
-              className="flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition
-                hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+              <option value="">All Job Types</option>
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Internship">Internship</option>
+              <option value="Remote">Remote</option>
+            </select>
+  <select
+              value={jobMode}
+              onChange={(e) => setJobMode(e.target.value)}
+              className="px-4 py-2 rounded-lg border bg-white text-sm"
             >
-              Next →
-            </button>
+              <option value="">All Modes</option>
+              <option value="Onsite">Onsite</option>
+              <option value="Remote">Remote</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+            {searching && (
+              <span className="text-xs text-gray-400">Searching…</span>
+            )}
           </div>
+
+          {/* Job Cards */}
+          <div className="space-y-4">
+            {currentJobs.length === 0 ? (
+              <p className="text-center text-gray-500 py-10">
+                No jobs found
+              </p>
+            ) : (
+              currentJobs.map((job) => (
+                <JobCard
+                  key={job._id}
+                  job={job}
+                  onClick={() => handlejobrouting(job._id)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-auto pt-12 flex justify-center">
+              <div className="flex items-center gap-1 rounded-xl bg-white px-3 py-2 shadow-sm ring-1 ring-gray-200">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-9 w-9 rounded-lg text-sm font-medium ${
+                        page === currentPage
+                          ? "bg-sky-600 text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </main>
+
+      <Footer />
     </div>
-  </main>
-
-  <Footer />
-</div>
-
-
-
   );
 };
 

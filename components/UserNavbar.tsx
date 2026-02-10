@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 
-import Loading from "./Loading";
 import CompanySwitcherModal from "./CompanySwitchmodal";
 import { logoutUser } from "@/store/slice/auth/auth";
 import { AppDispatch, Rootstate } from "@/store/store";
@@ -39,7 +38,7 @@ interface Job {
 export default function UserNavbar() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { user, loading } = useSelector((state: Rootstate) => state.auth);
+
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
@@ -48,7 +47,8 @@ export default function UserNavbar() {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Job[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const searchRef = useRef<HTMLDivElement | null>(null);
 
   const navItems = [
@@ -72,31 +72,30 @@ export default function UserNavbar() {
   ];
 
 
-  useEffect(() => {
-    if (!search.trim()) {
-      setResults([]);
-      setShowResults(false);
-      return;
+useEffect(() => {
+  if (!search.trim()) {
+    setResults([]);
+    setShowResults(false);
+    return;
+  }
+
+  debounceRef.current = setTimeout(async () => {
+    try {
+      const res = await api.get("/user/fetchsearch", {
+        params: { search, limit: 5 },
+      });
+      setResults(res.data?.data || []);
+      setShowResults(true);
+    } catch (err) {
+      console.error(err);
     }
+  }, 300);
 
+  return () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+  };
+}, [search]);
 
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await api.get("/user/fetchsearch", {
-          params: { search, limit: 5 },
-        });
-        setResults(res.data?.data || []);
-        setShowResults(true);
-      } catch (err) {
-        console.error(err);
-      }
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search]);
 
 
   useEffect(() => {
@@ -145,9 +144,12 @@ export default function UserNavbar() {
     router.push(`/user/jobs?search=${encodeURIComponent(search)}`);
     setSearch("");
   };
+useEffect(() => {
+  setShowResults(false);
+}, [router]);
 
-  if (loading) return <Loading text="Loading..." />;
-  if (!user) return null;
+
+
 
   return (
     <>

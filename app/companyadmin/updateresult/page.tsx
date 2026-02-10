@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, Rootstate } from "@/store/store";
 import { fetchMe } from "@/store/slice/auth/auth";
+import Loading from "@/components/Loading";
 
 
 
@@ -139,8 +140,23 @@ export default function UpdateResultPage() {
   const sidebarMargin = sidebarCollapsed ? "md:ml-20" : "md:ml-64";
 
   if (loading || showLoading) {
-    return <p className="text-center text-gray-500 mt-10">Loading...</p>;
-  }
+  return (
+    <div className="min-h-screen flex">
+      
+     
+        <CompanySidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+        collapsed={sidebarCollapsed}
+        setCollapsed={setSidebarCollapsed}
+      />
+
+      <div className="flex-1 flex items-center justify-center">
+        <Loading text="Loading ..." />
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="flex min-h-screen bg-gray-50">

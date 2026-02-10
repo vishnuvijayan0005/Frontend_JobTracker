@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { Menu, Pencil } from "lucide-react";
 
 import api from "@/utils/baseUrl";
@@ -13,6 +13,7 @@ import { AppDispatch, Rootstate } from "@/store/store";
 import BackButton from "@/components/BackButton";
 import CompanySidebar from "@/components/CompanySidebar";
 import AddJobModal from "@/components/Addjob";
+import axios, { AxiosError } from "axios";
 
 
 /* ================= TYPES ================= */
@@ -26,6 +27,7 @@ interface Job {
   qualifications?: string;
   interviewProcess?: string;
   location: string;
+  jobMode:string;
   experience: string;
   seniorityLevel: string;
   skills: string[];
@@ -95,33 +97,56 @@ const Page = () => {
 
   /* ================= STATUS ================= */
 
-  const toggleStatus = async () => {
-    if (!job || updatingStatus) return;
+const toggleStatus = async () => {
+  if (!job || updatingStatus) return;
 
-    const newStatus = job.status === "Open" ? "Closed" : "Open";
-    setUpdatingStatus(true);
+  const newStatus = job.status === "Open" ? "Closed" : "Open";
+  setUpdatingStatus(true);
 
-    try {
-      await api.patch(
-        `/companyadmin/job/${job._id}/status`,
-        { status: newStatus },
-        { withCredentials: true }
-      );
+  try {
+   const res= await api.patch(
+      `/companyadmin/job/${job._id}/status`,
+      { status: newStatus },
+      { withCredentials: true }
+    );
 
-      setJob((prev) => (prev ? { ...prev, status: newStatus } : prev));
-      toast.success(`Job marked as ${newStatus}`);
-    } catch {
-      toast.error("Failed to update job status");
-    } finally {
+    setJob((prev) => (prev ? { ...prev, status: newStatus } : prev));
+    
+  } catch (error){
+
+   
+    
+    
+    toast.error("You can’t update this job’s status,please contact admin");
+  } finally {
+
+    setTimeout(() => {
       setUpdatingStatus(false);
-    }
-  };
+    }, 50);
+  }
+};
+
 
   /* ================= LOADING ================= */
 
   if (loading || showLoading) {
-    return <Loading text="Fetching job details..." />;
-  }
+  return (
+    <div className="min-h-screen flex">
+      
+     
+      <CompanySidebar
+        isOpen={sidebarOpen}
+        setIsOpen={setSidebarOpen}
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+      />
+
+      <div className="flex-1 flex items-center justify-center">
+        <Loading text="Loading ..." />
+      </div>
+    </div>
+  );
+}
 
   if (!job) {
     return <p className="text-center mt-10">Job not found</p>;
@@ -198,6 +223,7 @@ const Page = () => {
               <Meta label="Experience" value={job.experience} />
               <Meta label="Seniority Level" value={job.seniorityLevel} />
               <Meta label="Job Type" value={job.jobType} />
+               <Meta label="Job Type" value={job.jobMode} />
               {job.salary && <Meta label="Salary" value={job.salary} />}
 
               <div className="pt-4 border-t">
@@ -239,6 +265,7 @@ const Page = () => {
         mode="edit"
         initialData={job}
       />
+
     </div>
   );
 };

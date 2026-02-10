@@ -1,43 +1,39 @@
 "use client"
 import AdminDashboard from '@/components/AdminDashboard'
 import Loading from '@/components/Loading';
+import { fetchMe } from '@/store/slice/auth/auth';
+import { AppDispatch, Rootstate } from '@/store/store';
 import api from '@/utils/baseUrl';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
 
 function admin() {
      const router = useRouter();
-  const [loading, setLoading] = useState(true);
+
+
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, isAuthenticated, user } = useSelector((state: Rootstate) => state.auth);
+  const [showLoading, setShowLoading] = useState(true);
+
+  /* ================= AUTH ================= */
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/auth/admin", {
-          withCredentials: true,
-        });
+    dispatch(fetchMe());
+  }, [dispatch]);
 
-        // Unauthorized
-        if (!res.data?.success) {
-          router.replace("/access-denied");
-          return;
-        }
+  useEffect(() => {
+    if (loading) return;
 
-        // Authorized → show loader briefly for UX
-        setTimeout(() => {
-          setLoading(false);
-        }, 1500);
+    if (!isAuthenticated || user?.role !== "admin") {
+      router.replace("/access-denied");
+      return;
+    }
 
-      } catch (err: any) {
-        // Only redirect, no console error
-        if (err.response?.status === 401) {
-          router.replace("/access-denied");
-        }
-      }
-    };
-
-    fetchUser();
-  }, [router]);
-   if (loading) {
+    const timer = setTimeout(() => setShowLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, [loading, isAuthenticated, user, router]);
+   if (loading|| showLoading) {
     return <Loading text="Fetching your data..." />;
   }
   return (

@@ -1,25 +1,24 @@
 "use client";
 
-import { Bell, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
 
-export default function AdminNavbar() {
+export default function SuperAdminNavbar({
+  onMenuClick,
+}: {
+  onMenuClick?: () => void;
+}) {
   return (
-    <header className="h-16 bg-white border-b flex items-center justify-between px-6">
-      <div className="flex items-center gap-3 w-full max-w-md">
-        <Search className="h-4 w-4 text-gray-400" />
-        <input
-          placeholder="Search companies, jobs..."
-          className="w-full bg-transparent outline-none text-sm"
-        />
-      </div>
+    <header className="h-16 bg-white border-b border-slate-200 flex items-center px-4 sm:px-6">
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 rounded-md hover:bg-slate-100"
+      >
+        <Menu className="h-6 w-6" />
+      </button>
 
-      <div className="flex items-center gap-4">
-        <Button size="icon" variant="ghost">
-          <Bell className="h-5 w-5" />
-        </Button>
-        <div className="h-8 w-8 rounded-full bg-slate-200" />
-      </div>
+      <h1 className="ml-4 text-lg font-semibold text-slate-800">
+        Admin Panel
+      </h1>
     </header>
   );
 }

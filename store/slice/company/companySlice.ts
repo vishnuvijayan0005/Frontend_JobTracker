@@ -1,3 +1,4 @@
+"use client"
 import api from "@/utils/baseUrl";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
@@ -11,6 +12,9 @@ export interface Company {
   phone: number;
   siteid: string;
   approved: boolean;
+  userid:{
+    isblocked:boolean;
+  }
 }
 
 export const fetchCompanies = createAsyncThunk(

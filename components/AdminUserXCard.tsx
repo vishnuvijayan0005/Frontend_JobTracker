@@ -18,6 +18,7 @@ export interface AdminUser {
   _id: string; // userId
   userId: {
     email: string;
+    isblocked:boolean
   };
 
   role: "user" | "company" | "admin";
@@ -50,7 +51,7 @@ export default function AdminUserCard({
   onView,
   onBlock,
   onUnblock,
-  onDelete,
+//   onDelete,
 }: Props) {
   const fullName = `${user.firstName} ${user.lastName}`;
 
@@ -59,6 +60,7 @@ export default function AdminUserCard({
         .filter(Boolean)
         .join(", ")
     : null;
+
 
   return (
     <div className="bg-white border rounded-2xl p-5 sm:p-6 hover:shadow-md transition">
@@ -101,7 +103,7 @@ export default function AdminUserCard({
         </div>
 
         {/* Status */}
-        {user.status === "active" ? (
+        {user.userId.isblocked === false ? (
           <span className="flex items-center gap-1 text-xs font-semibold bg-green-100 text-green-700 px-3 py-1 rounded-full">
             <ShieldCheck className="h-4 w-4" />
             Active
@@ -148,7 +150,7 @@ export default function AdminUserCard({
           View
         </Button>
 
-        {user.status === "active" && onBlock && (
+        {user.userId.isblocked === false && onBlock && (
           <Button
             size="sm"
             variant="outline"
@@ -160,7 +162,7 @@ export default function AdminUserCard({
           </Button>
         )}
 
-        {user.status === "blocked" && onUnblock && (
+        {user.userId.isblocked === true && onUnblock && (
           <Button
             size="sm"
             className="bg-green-600 hover:bg-green-700"
@@ -170,7 +172,7 @@ export default function AdminUserCard({
           </Button>
         )}
 
-        {onDelete && (
+        {/* {onDelete && (
           <Button
             size="sm"
             variant="destructive"
@@ -180,7 +182,7 @@ export default function AdminUserCard({
             <Trash2 className="h-4 w-4" />
             Delete
           </Button>
-        )}
+        )} */}
       </div>
     </div>
   );

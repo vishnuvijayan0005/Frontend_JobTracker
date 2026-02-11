@@ -116,7 +116,7 @@ export default function ApplicantsPage() {
       const res = await api.get("/companyadmin/getapplicants", {
         withCredentials: true,
       });
-      console.log(res.data.data);
+      // console.log(res.data.data);
 
       setJobs(groupByJob(res.data.data));
     } catch (err) {

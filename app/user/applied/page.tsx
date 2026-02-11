@@ -13,14 +13,21 @@ import api from "@/utils/baseUrl";
 import Modal from "@/components/Modal";
 
 /* ================= TYPES ================= */
-
+interface InterviewDetails {
+  date: string;
+  time: string;
+  mode: "online" | "offline";
+  location?: string | null;
+  meetingLink?: string | null;
+}
 interface Job {
   id: string;
   title: string;
   companyName: string;
   location: string;
   appliedAt: string;
-  status: "Applied" | "Under Review" | "Withdrawn";
+  status: string;
+ 
 }
 
 /* ================= PAGE ================= */
@@ -28,7 +35,7 @@ interface Job {
 const AppliedJobsPage = () => {
   const [appliedJobs, setAppliedJobs] = useState<Job[]>([]);
   const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
-
+  const [interviewInfo,setInterviewInfo]=useState<InterviewDetails>()
   const { loading, isAuthenticated, user } = useSelector(
     (state: Rootstate) => state.auth,
   );
@@ -36,6 +43,7 @@ const AppliedJobsPage = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const [showLoading, setShowLoading] = useState(true);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   /* ================= AUTH ================= */
 
@@ -57,39 +65,34 @@ const AppliedJobsPage = () => {
 
   /* ================= FETCH APPLIED JOBS ================= */
 
-  
- const fetchAppliedJobs = async () => {
-      try {
-        const res = await api.get("/user/appliedjobs", {
-          withCredentials: true,
-        });
-        // console.log(res.data.data);
-        
-        setAppliedJobs(res.data.data);
-      } catch {
-        toast.error("Failed to load applied jobs");
-      }
-    };
-useEffect(()=>{
+  const fetchAppliedJobs = async () => {
+    try {
+      const res = await api.get("/user/appliedjobs", {
+        withCredentials: true,
+      });
+      // console.log(res.data.data);
 
+      setAppliedJobs(res.data.data);
+    } catch {
+      toast.error("Failed to load applied jobs");
+    }
+  };
+  useEffect(() => {
     fetchAppliedJobs();
-}
-  , []);
+  }, []);
   const [openModal, setOpenModal] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   /* ================= WITHDRAW ================= */
 
   const handleWithdraw = async (jobId: string) => {
- 
-
     setWithdrawingId(jobId);
 
     try {
       await toast.promise(
         api.delete(
           `/user/withdrawapplication/${jobId}`,
-          
+
           { withCredentials: true },
         ),
         {
@@ -120,6 +123,12 @@ useEffect(()=>{
     );
   }
 
+ const fetchinterview=async(id:string)=>{
+                            const res=await api.get(`/user/interviewData/${id}`,{withCredentials:true})
+                            setInterviewInfo(res.data.data)
+                            // console.log(interviewInfo);
+                            
+                          }
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <UserNavbar />
@@ -160,6 +169,7 @@ useEffect(()=>{
                     <h2 className="text-xl font-semibold text-gray-900">
                       {job.title}
                     </h2>
+                
                     <p className="text-gray-600 mt-1">{job.companyName}</p>
 
                     <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-500">
@@ -190,6 +200,21 @@ useEffect(()=>{
                     >
                       {job.status}
                     </span>
+                    {job.status?.toLowerCase().includes("interview")  && (
+                      <button
+                        onClick={() =>{
+                         fetchinterview(job.id)
+                          setExpandedJobId(
+                            expandedJobId === job.id ? null : job.id,
+                          )}
+                        }
+                        className="px-4 py-2 rounded-lg bg-purple-600 text-black hover:bg-purple-700 text-sm" 
+                      >
+                        {expandedJobId === job.id
+                          ? "Hide Interview Details"
+                          : "View Interview Details"}
+                      </button>
+                    )}
 
                     {/* Actions */}
                     <div className="flex gap-2">
@@ -216,6 +241,57 @@ useEffect(()=>{
                     </div>
                   </div>
                 </div>
+                {expandedJobId === job.id &&job.status?.toLowerCase().includes("interview") && (
+
+                  <div className="mt-6 p-5 bg-purple-50 border border-purple-200 rounded-xl animate-fade-in">
+                    <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                      Interview Details
+                    </h3>
+
+                   {interviewInfo ? (
+  <div className="space-y-2 text-sm text-gray-700">
+    <p>
+      <strong>Date:</strong>{" "}
+      {new Date(interviewInfo.date).toLocaleDateString()}
+    </p>
+
+    <p>
+      <strong>Time:</strong> {interviewInfo.time}
+    </p>
+
+    <p>
+      <strong>Mode:</strong>{" "}
+      <span className="capitalize">{interviewInfo.mode}</span>
+    </p>
+
+    {interviewInfo.mode === "offline" && (
+      <p>
+        <strong>Location:</strong> {interviewInfo.location}
+      </p>
+    )}
+
+    {interviewInfo.mode === "online" && (
+      <p>
+        <strong>Meeting Link:</strong>{" "}
+        <a
+          href={interviewInfo.meetingLink || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-purple-600 underline"
+        >
+          Join Interview
+        </a>
+      </p>
+    )}
+  </div>
+) : (
+  <p className="text-gray-600 text-sm">
+    Interview details will be shared soon.
+  </p>
+)}
+
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -250,6 +326,7 @@ useEffect(()=>{
           </p>
         </Modal>
       </main>
+      {/* Interview Details Expand Section */}
 
       <Footer />
     </div>

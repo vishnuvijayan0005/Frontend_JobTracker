@@ -32,7 +32,7 @@ export default function AdminJobCard({
   onApprove,
   onReject,
 }: AdminJobCardProps) {
-    console.log(job);
+    // console.log(job);
     
 //   const statusStyles = {
 //     active: "bg-green-100 text-green-700",

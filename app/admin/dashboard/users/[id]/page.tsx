@@ -1,20 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Menu } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, Menu } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 
 import SuperAdminSidebar from "@/components/AdminSidebar";
 
 import Loading from "@/components/Loading";
-import { Button } from "@/components/ui/button";
+
 
 import { fetchMe } from "@/store/slice/auth/auth";
 import { AppDispatch, Rootstate } from "@/store/store";
-import AdminUserCard, { AdminUser } from "@/components/AdminUserXCard";
+
 import api from "@/utils/baseUrl";
 import toast from "react-hot-toast";
+import AdminUserProfileView, { AdminUserProfile } from "@/components/AdminUserProfile";
+
 
 
 
@@ -25,28 +27,37 @@ const Page = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLoading, setShowLoading] = useState(true);
-const [users,setUsers]=useState<AdminUser[]>([])
+const [users,setUsers]=useState<AdminUserProfile>()
   const { loading, isAuthenticated, user } = useSelector(
     (state: Rootstate) => state.auth
   );
+  const params = useParams();
+
+  const id = params?.id as string;
 
 
-const fetchusers= async()=>{
+  const fetchusers = async (userId: string) => {
     try {
-        const res=await api.get("/superadmin/users",
-            {withCredentials:true}
-        )
-        console.log(res.data.data);
-        
-        setUsers(res.data.data)
+      const res = await api.get(
+        `/superadmin/user/${userId}/view`,
+        { withCredentials: true }
+      );
+
+      console.log(res.data.data);
+      setUsers(res.data.data);
     } catch (error) {
-        
+      console.error("Fetch user error:", error);
     }
-}
+  };
+
   useEffect(() => {
     dispatch(fetchMe());
-    fetchusers()
-  }, [dispatch]);
+
+    if (id) {
+      fetchusers(id);
+    }
+  }, [dispatch, id]); 
+
 
   useEffect(() => {
     if (loading) return;
@@ -81,22 +92,22 @@ const fetchusers= async()=>{
  const unblockUser= async (id: string) => {
 
     const res = await api.patch(
-      `/superadmin//user/${id}/status`,
+      `/superadmin/user/${id}/status`,
       { status: false },
       { withCredentials: false },
     );
-    fetchusers()
+    fetchusers(id)
     toast.success(res.data.message);
   };
 
   const blockUser= async (id: string) => {
     
     const res = await api.patch(
-      `/superadmin//user/${id}/status`,
+      `/superadmin/user/${id}/status`,
       { status: true },
       { withCredentials: false },
     );
-     fetchusers()
+     fetchusers(id)
     toast.success(res.data.message);
   };
 //   const deleteUser = (id: string) => {
@@ -139,35 +150,28 @@ const fetchusers= async()=>{
             </p>
           </div>
 
-          <Button variant="outline">
-            Filters (Coming Soon)
-          </Button>
+       
         </header>
 
         {/* Content */}
         <main className="p-4 sm:p-6 lg:p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {users.map((u) => (
-              <AdminUserCard
-                key={u._id}
-                user={u}
-                onView={(id) =>
-                  router.push(`/admin/dashboard/users/${id}`)
-                }
-                onBlock={blockUser}
-                onUnblock={unblockUser}
-                // onDelete={deleteUser}
-              />
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {users.length === 0 && (
-            <div className="text-center text-slate-500 py-20">
-              No users found
-            </div>
-          )}
-        </main>
+          <div className="mb-6">
+  <button
+    onClick={() => router.back()}
+    className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+  >
+    <ArrowLeft size={18} />
+    Back to Users
+  </button>
+</div>
+  {users && (
+  <AdminUserProfileView
+    userData={users}
+    onBlock={blockUser}
+    onUnblock={unblockUser}
+  />
+  )}
+</main>
       </div>
     </div>
   );

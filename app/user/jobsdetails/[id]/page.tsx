@@ -19,20 +19,16 @@ interface Job {
   _id: string;
   title: string;
   companyName: string;
-
   description: string;
   requirements?: string;
   qualifications?: string;
   interviewProcess?: string;
-
   location: string;
   experience: string;
   seniorityLevel: string;
-
   skills: string[];
   benefits: string[];
   tags: string[];
-
   jobType: string;
   salary: string;
   status: string;
@@ -47,13 +43,30 @@ const Page = () => {
   const { id } = useParams();
 
   const { loading, isAuthenticated, user } = useSelector(
-    (state: Rootstate) => state.auth,
+    (state: Rootstate) => state.auth
   );
 
   const [showLoading, setShowLoading] = useState(true);
   const [job, setJob] = useState<Job | null>(null);
   const [applied, setApplied] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState("");
+
+  /* ================= LOAD SHARETHIS SCRIPT ================= */
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src =
+      "https://platform-api.sharethis.com/js/sharethis.js#property=YOUR_PROPERTY_ID&product=inline-share-buttons";
+    script.async = true;
+    document.body.appendChild(script);
+
+    setCurrentUrl(window.location.href);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   /* ================= AUTH CHECK ================= */
 
@@ -92,7 +105,7 @@ const Page = () => {
 
         setJob(res.data.data);
         setApplied(res.data.jobStatus === "applied");
-      } catch (error) {
+      } catch {
         toast.error("Failed to load job details");
       }
     };
@@ -109,28 +122,36 @@ const Page = () => {
 
     try {
       await toast.promise(
-        api.post(
-          `/user/addapplication/${jobId}`,
-          {},
-          { withCredentials: true },
-        ),
+        api.post(`/user/addapplication/${jobId}`, {}, { withCredentials: true }),
         {
           loading: "Applying for job...",
-          success: (res) => {
-            return res.data?.message || "Application submitted successfully 🎉";
-          },
-          error: (err) => {
-            if (err.response?.status === 409) return "Already applied";
-            if (err.response?.status === 404) return "Job not found";
-            if (err.response?.status === 401) return "Please login";
-            return "Something went wrong";
-          },
-        },
+          success: "Application submitted successfully 🎉",
+          error: "Something went wrong",
+        }
       );
 
-      setApplied(true); // ✅ update UI after success
+      setApplied(true);
     } finally {
       setApplying(false);
+    }
+  };
+
+  const handleWithdraw = async (jobId: string) => {
+    try {
+      await toast.promise(
+        api.delete(`/user/withdrawapplication/${jobId}`, {
+          withCredentials: true,
+        }),
+        {
+          loading: "Withdrawing application...",
+          success: "Application withdrawn",
+          error: "Failed to withdraw",
+        }
+      );
+
+      setApplied(false);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -145,30 +166,6 @@ const Page = () => {
   }
 
   /* ================= RENDER ================= */
-  const handleWithdraw = async (jobId: string) => {
-    try {
-      await toast.promise(
-        api.delete(`/user/withdrawapplication/${jobId}`, {
-          withCredentials: true,
-        }),
-        {
-          loading: "Withdrawing application...",
-          success: "Application withdrawn",
-          error: "Failed to withdraw",
-        },
-      );
-
-      // Update UI after withdraw
-      setApplied(false);
-      // Optionally refresh job details from backend
-      const res = await api.get(`/user/jobsdetails/${jobId}`, {
-        withCredentials: true,
-      });
-      setJob(res.data.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -180,123 +177,47 @@ const Page = () => {
 
       <main className="flex-1">
         <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* ================= LEFT ================= */}
+          {/* LEFT SECTION */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Header */}
             <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h1 className="text-3xl font-bold text-gray-900">{job.title}</h1>
-              <p className="text-gray-600 mt-2 text-lg">{job.companyName}</p>
-
-              <div className="flex flex-wrap gap-3 mt-5 text-sm">
-                <span className="px-3 py-1 rounded-full bg-gray-100">
-                  📍 {job.location}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-gray-100">
-                  🧑‍💼 {job.experience} years
-                </span>
-                <span className="px-3 py-1 rounded-full bg-gray-100">
-                  🎯 {job.seniorityLevel}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-gray-100">
-                  💼 {job.jobType}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-gray-100">
-                  💰 {job.salary}
-                </span>
-              </div>
-            </div>
-
-            {/* About */}
-            <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">About the role</h2>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {job.description}
+              <h1 className="text-3xl font-bold">{job.title}</h1>
+              <p className="text-gray-600 mt-2 text-lg">
+                {job.companyName}
               </p>
             </div>
 
-            {/* Requirements */}
-            {job.requirements && (
-              <div className="bg-white rounded-3xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold mb-4">Requirements</h2>
-                <p className="text-gray-700 whitespace-pre-line">
-                  {job.requirements}
-                </p>
-              </div>
-            )}
-
-            {/* Qualifications */}
-            {job.qualifications && (
-              <div className="bg-white rounded-3xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold mb-4">Qualifications</h2>
-                <p className="text-gray-700 whitespace-pre-line">
-                  {job.qualifications}
-                </p>
-              </div>
-            )}
-
-            {/* Skills */}
             <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">Skills</h2>
-              <div className="flex flex-wrap gap-2">
-                {job.skills.map((skill, index) => (
-                  <span
-                    key={index}
-                    className="px-4 py-1.5 rounded-full bg-sky-50 text-sky-700 text-sm font-medium"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
+              <h2 className="text-xl font-semibold mb-4">
+                About the role
+              </h2>
+              <p className="whitespace-pre-line">{job.description}</p>
             </div>
 
-            {/* Benefits */}
-            {job.benefits?.length > 0 && (
-              <div className="bg-white rounded-3xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold mb-4">Benefits</h2>
-                <ul className="list-disc list-inside text-gray-700 space-y-1">
-                  {job.benefits.map((benefit, idx) => (
-                    <li key={idx}>{benefit}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* 🔥 SHARE SECTION */}
+            <div className="bg-white rounded-3xl shadow-sm p-8">
+              <h2 className="text-lg font-semibold mb-4">
+                Share this job
+              </h2>
 
-            {/* Interview Process */}
-            {job.interviewProcess && (
-              <div className="bg-white rounded-3xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold mb-4">
-                  Interview Process
-                </h2>
-                <p className="text-gray-700">{job.interviewProcess}</p>
-              </div>
-            )}
-
-            {/* Tags */}
-            {job.tags?.length > 0 && (
-              <div className="bg-white rounded-3xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold mb-4">Tags</h2>
-                <div className="flex flex-wrap gap-2">
-                  {job.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-sm"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+              <div
+                className="sharethis-inline-share-buttons"
+                data-url={currentUrl}
+                data-title={job.title}
+                data-description={job.description}
+              ></div>
+            </div>
           </div>
 
-          {/* ================= RIGHT ================= */}
+          {/* RIGHT SECTION */}
           <div>
             <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-24">
               <p className="text-sm text-gray-500 mb-2">Job Status</p>
 
               <p
                 className={`font-semibold mb-6 ${
-                  job.status === "Open" ? "text-green-600" : "text-red-600"
+                  job.status === "Open"
+                    ? "text-green-600"
+                    : "text-red-600"
                 }`}
               >
                 {job.status}
@@ -305,35 +226,33 @@ const Page = () => {
               <button
                 disabled={applied || applying || job.status !== "Open"}
                 onClick={() => handleApplication(job._id)}
-                className={`w-full py-3 rounded-xl font-semibold text-lg transition
-                  ${
-                    applied
-                      ? "bg-green-100 text-green-700 cursor-not-allowed"
-                      : job.status !== "Open"
-                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                        : "bg-sky-600 text-white hover:bg-sky-700"
-                  }
-                `}
+                className={`w-full py-3 rounded-xl font-semibold text-lg transition ${
+                  applied
+                    ? "bg-green-100 text-green-700 cursor-not-allowed"
+                    : job.status !== "Open"
+                    ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                    : "bg-sky-600 text-white hover:bg-sky-700"
+                }`}
               >
-                {applied ? "Applied ✓" : applying ? "Applying..." : "Apply Now"}
+                {applied
+                  ? "Applied ✓"
+                  : applying
+                  ? "Applying..."
+                  : "Apply Now"}
               </button>
 
               {applied && (
-  <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-2xl text-center flex flex-col items-center gap-3 shadow-sm">
-    <p className="text-green-800 font-medium">
-      You’ve already applied for this job
-    </p>
-    <button
-      onClick={() => handleWithdraw(job._id)}
-      className="w-full max-w-xs py-2 rounded-xl font-semibold text-lg bg-red-600 text-white hover:bg-red-700 transition-shadow shadow-sm hover:shadow-md"
-    >
-      Withdraw Application
-    </button>
-  </div>
-)}
+                <button
+                  onClick={() => handleWithdraw(job._id)}
+                  className="mt-4 w-full py-2 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700"
+                >
+                  Withdraw Application
+                </button>
+              )}
 
               <div className="mt-6 text-xs text-gray-500 text-center">
-                Posted on {new Date(job.createdAt).toLocaleDateString()}
+                Posted on{" "}
+                {new Date(job.createdAt).toLocaleDateString()}
               </div>
             </div>
           </div>

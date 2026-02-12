@@ -7,30 +7,29 @@ import UserNavbar from "@/components/UserNavbar";
 import Loading from "@/components/Loading";
 import { AppDispatch, Rootstate } from "@/store/store";
 import { fetchMe } from "@/store/slice/auth/auth";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import Footer from "@/components/Footer";
 import JobSearch from "@/components/SearchComponent";
+import ATSResult from "@/components/ATSResult";
+import ResumeATSForm from "@/components/ResumeATSForm";
 
 export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
   const { loading, isAuthenticated, user } = useSelector(
-    (state: Rootstate) => state.auth,
+    (state: Rootstate) => state.auth
   );
 
   const [showLoading, setShowLoading] = useState(true);
-
-
+  const [result, setResult] = useState<any>(null);
   const toastShown = useRef(false);
+
   useEffect(() => {
     dispatch(fetchMe());
   }, [dispatch]);
 
-
-
-
-useEffect(() => {
+  useEffect(() => {
     if (loading) return;
 
     if (!isAuthenticated || user?.role !== "user") {
@@ -39,7 +38,7 @@ useEffect(() => {
     }
 
     if (user?.isprofilefinished === false && !toastShown.current) {
-      toastShown.current = true; // mark toast as shown
+      toastShown.current = true;
 
       toast.custom((t) => (
         <div
@@ -48,7 +47,6 @@ useEffect(() => {
           } max-w-md w-full bg-white shadow-xl rounded-2xl pointer-events-auto flex border`}
         >
           <div className="w-2 bg-red-600 rounded-l-2xl" />
-
           <div className="flex-1 p-4">
             <p className="text-sm font-semibold text-gray-800">
               Profile Incomplete
@@ -56,7 +54,6 @@ useEffect(() => {
             <p className="text-sm text-gray-600 mt-1">
               Please complete your profile before continuing.
             </p>
-
             <div className="mt-3 flex gap-3">
               <button
                 onClick={() => toast.dismiss(t.id)}
@@ -64,7 +61,6 @@ useEffect(() => {
               >
                 Dismiss
               </button>
-
               <button
                 onClick={() => {
                   toast.dismiss(t.id);
@@ -82,38 +78,46 @@ useEffect(() => {
 
     const timer = setTimeout(() => setShowLoading(false), 1500);
     return () => clearTimeout(timer);
-
   }, [loading, isAuthenticated, user]);
-
-
-
 
   if (loading || showLoading) return <Loading text="Fetching your data..." />;
 
   if (!isAuthenticated || !user) return null;
 
-const jobs = [
-  { _id: "1", title: "Frontend Developer", companyName: "Google", location: "Bangalore", salary: "₹50k-80k" },
-  { _id: "2", title: "Backend Engineer", companyName: "Amazon", location: "Hyderabad", salary: "₹60k-90k" },
-  { _id: "3", title: "Fullstack Developer", companyName: "Microsoft", location: "Pune" },
-];
-
   return (
-   <div className="min-h-screen flex flex-col bg-gray-50">
-  {/* Navbar */}
-  <UserNavbar />
+    <div className="min-h-screen flex flex-col bg-gray-50 w-full">
+      {/* Navbar */}
+      <UserNavbar />
 
-  {/* Main Content (takes remaining height) */}
-  <main className="flex-1 max-w-7xl mx-auto p-6 w-full">
-    {/* <h1 className="text-2xl font-bold">
-      Welcome, {user.name || "User"}!
-    </h1> */}
-<JobSearch />
-  </main>
-
-  {/* Footer (always at bottom) */}
-  <Footer />
+      {/* Main Content */}
+      <main className="flex-1 w-full  md:px-8  lg:py-12">
+        {/* Job Search */}
+      <div className="w-full bg-gradient-to-b from-sky-50 to-white py-12">
+  <div className="max-w-7xl mx-auto px-4">
+    <JobSearch />
+  </div>
 </div>
 
+        {/* Resume ATS Form */}
+        <div className="max-w-3xl mx-auto w-full mt-12">
+          <ResumeATSForm onResult={setResult} />
+        </div>
+
+        {/* ATS Result */}
+        {result && (
+          <div className="max-w-4xl mx-auto w-full mt-12">
+            <ATSResult
+              score={result.score}
+              breakdown={result.breakdown}
+              missingKeywords={result.missingKeywords}
+              improvements={result.improvements}
+            />
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <Footer />
+    </div>
   );
 }

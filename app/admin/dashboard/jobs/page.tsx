@@ -13,55 +13,29 @@ import { fetchMe } from "@/store/slice/auth/auth";
 import Loading from "@/components/Loading";
 import { Job } from "@/app/user/Jobs/page";
 import api from "@/utils/baseUrl";
-
-// const demoJobs = [
-//   {
-//     id: "1",
-//     title: "Senior Frontend Engineer",
-//     companyName: "Acme Corp",
-//     location: "Bangalore, India",
-//     jobType: "Full-time",
-//     postedAt: "2 days ago",
-//     status: "pending",
-//   },
-//   {
-//     id: "2",
-//     title: "Backend Developer (Node.js)",
-//     companyName: "NextHire",
-//     location: "Remote",
-//     jobType: "Contract",
-//     postedAt: "5 days ago",
-//     status: "active",
-//   },
-//   {
-//     id: "3",
-//     title: "UI/UX Designer",
-//     companyName: "Pixel Labs",
-//     location: "Mumbai, India",
-//     jobType: "Full-time",
-//     postedAt: "1 week ago",
-//     status: "rejected",
-//   },
-//   {
-//     id: "4",
-//     title: "DevOps Engineer",
-//     companyName: "CloudNine",
-//     location: "Hyderabad, India",
-//     jobType: "Full-time",
-//     postedAt: "3 days ago",
-//     status: "pending",
-//   },
-// ];
+import toast from "react-hot-toast";
 
 const Page = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-const[jobs,setJobs]=useState<Job[]>([])
-  const approveJob = (id: string) => {
-    console.log("Approved job:", id);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const approveJob = async (id: string) => {
+    const res = await api.patch(
+      `/superadmin/jobs/${id}/forced`,
+      { status: false },
+      { withCredentials: false },
+    );
+    fetchJobs();
+    toast.success(res.data.message);
   };
 
-  const rejectJob = (id: string) => {
-    console.log("Rejected job:", id);
+  const rejectJob = async (id: string) => {
+    const res = await api.patch(
+      `/superadmin/jobs/${id}/forced`,
+      { status: true },
+      { withCredentials: false },
+    );
+    fetchJobs();
+    toast.success(res.data.message);
   };
   const router = useRouter();
   const { loading, isAuthenticated, user } = useSelector(
@@ -69,15 +43,14 @@ const[jobs,setJobs]=useState<Job[]>([])
   );
   const dispatch = useDispatch<AppDispatch>();
   const [showLoading, setShowLoading] = useState(true);
-    const fetchJobs=async()=>{
-   try {
-     const res=await api.get("superadmin/jobs",{withCredentials:true})
-     setJobs(res.data.data)
-   } catch (error) {
-    console.error(error,"----jobs");
-    
-   }
-  }
+  const fetchJobs = async () => {
+    try {
+      const res = await api.get("superadmin/jobs", { withCredentials: true });
+      setJobs(res.data.data);
+    } catch (error) {
+      console.error(error, "----jobs");
+    }
+  };
   useEffect(() => {
     dispatch(fetchMe());
     fetchJobs();
@@ -95,23 +68,21 @@ const[jobs,setJobs]=useState<Job[]>([])
     return () => clearTimeout(timer);
   }, [loading, isAuthenticated, user, router]);
 
+  if (loading || showLoading) {
+    return (
+      <div className="min-h-screen flex">
+        <SuperAdminSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
 
-if (loading || showLoading) {
-  return (
-    <div className="min-h-screen flex">
-      <SuperAdminSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-
-      <div className="flex-1 flex items-center justify-center">
-        <Loading text="Loading ..." />
+        <div className="flex-1 flex items-center justify-center">
+          <Loading text="Loading ..." />
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
- 
   return (
     <div className="min-h-screen bg-slate-100 flex">
       {/* Sidebar */}
@@ -147,12 +118,7 @@ if (loading || showLoading) {
               </p>
             </div>
 
-            <Button
-              onClick={() => alert("Filter coming soon")}
-              variant="outline"
-            >
-              Filter Jobs
-            </Button>
+           
           </div>
         </header>
 
@@ -163,7 +129,7 @@ if (loading || showLoading) {
               <AdminJobCard
                 key={job._id}
                 job={job}
-                onView={() => router.push(`/superadmin/jobs/${job._id}`)}
+                onView={() => router.push(`/admin/dashboard/jobs/${job._id}`)}
                 onApprove={() => approveJob(job._id)}
                 onReject={() => rejectJob(job._id)}
               />

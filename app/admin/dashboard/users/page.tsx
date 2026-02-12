@@ -139,9 +139,6 @@ const fetchusers= async()=>{
             </p>
           </div>
 
-          <Button variant="outline">
-            Filters (Coming Soon)
-          </Button>
         </header>
 
         {/* Content */}

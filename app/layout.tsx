@@ -37,7 +37,6 @@ export default function RootLayout({
   position="top-center"
   reverseOrder={false}
 />
-<script type="text/javascript" src="https://platform-api.sharethis.com/js/sharethis.js" defer></script>
         </Providers>
       </body>
     </html>

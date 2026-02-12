@@ -9,7 +9,19 @@ import {
   IndianRupee,
 } from "lucide-react";
 import api from "@/utils/baseUrl";
-
+import { AppDispatch, Rootstate } from "@/store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchMe } from "@/store/slice/auth/auth";
+const COMPANY_CATEGORIES = [
+  "Software",
+  "Finance",
+  "Healthcare",
+  "Education",
+  "Retail",
+  "Marketing",
+  "Logistics",
+  "Manufacturing",
+];
 interface Job {
   _id: string;
   title: string;
@@ -26,7 +38,9 @@ const PAGE_SIZE = 6;
 
 export default function JobSearchPage() {
   const router = useRouter();
-
+ const {   user } = useSelector(
+    (state: Rootstate) => state.auth
+  );
   const [query, setQuery] = useState("");
   const [jobType, setJobType] = useState("All");
   const [jobMode, setJobMode] = useState("All");
@@ -37,6 +51,8 @@ export default function JobSearchPage() {
   const [page, setPage] = useState(1);
 
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+
 
   /* ================= FETCH ================= */
   const fetchJobs = async (pageNo: number) => {
@@ -91,7 +107,7 @@ export default function JobSearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b ">
       {/* ================= SEARCH ================= */}
       <div className="flex flex-col items-center text-center pt-28 pb-16 px-4">
         <h1 className="text-4xl md:text-5xl font-bold">
@@ -150,8 +166,15 @@ export default function JobSearchPage() {
                 <JobCard
                   key={job._id}
                   job={job}
-                  onClick={() =>
-                    router.push(`/user/jobsdetails/${job._id}`)
+                  onClick={() =>{
+                    if(user){
+                      router.push(`/user/jobsdetails/${job._id}`)
+                    }
+                    else{
+                      router.push(`/nonuser/onejob/${job._id}`)
+                    }
+                  }
+                    
                   }
                 />
               ))}
@@ -179,6 +202,14 @@ export default function JobSearchPage() {
             </div>
           </>
         )}
+  <div className="pt-20 pb-12 px-4 max-w-6xl mx-auto">
+  <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
+    Explore Companies by Category
+  </h2>
+  <CategoryBoxes />
+</div>
+
+       
       </div>
     </div>
   );
@@ -239,3 +270,45 @@ function EmptyState() {
     </div>
   );
 }
+const CATEGORY_COLORS: Record<string, string> = {
+  Software: "from-blue-100 to-blue-200",
+  Finance: "from-green-100 to-green-200",
+  Healthcare: "from-red-100 to-red-200",
+  Education: "from-purple-100 to-purple-200",
+  Retail: "from-pink-100 to-pink-200",
+  Marketing: "from-yellow-100 to-yellow-200",
+  Logistics: "from-orange-100 to-orange-200",
+  Manufacturing: "from-gray-200 to-gray-300",
+};
+
+function CategoryBoxes() {
+  const router = useRouter();
+ const {   user } = useSelector(
+    (state: Rootstate) => state.auth
+  );
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-6 mt-8" onClick={() =>{
+                    if(user){
+                      router.push(`/user/companies`)
+                    }
+                    else{
+                      router.push(`/nonuser/companies`)
+                    }
+                  }}>
+      {COMPANY_CATEGORIES.map((category) => (
+        <div
+          key={category}
+          className={`
+            flex items-center justify-center gap-2 px-4 py-3 rounded-2xl shadow-lg cursor-pointer
+            hover:shadow-2xl hover:scale-105 transform transition-all duration-300
+            bg-gradient-to-br ${CATEGORY_COLORS[category] || "from-sky-50 to-white"}
+          `}
+        >
+          <span className="text-sm font-semibold text-gray-800">{category}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+

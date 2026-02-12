@@ -12,6 +12,7 @@ import { fetchMe } from "@/store/slice/auth/auth";
 import { AppDispatch, Rootstate } from "@/store/store";
 import BackButton from "@/components/BackButton";
 import Footer from "@/components/Footer";
+import JobShare from "@/components/JobShare";
 
 /* ================= TYPES ================= */
 
@@ -199,12 +200,11 @@ const Page = () => {
                 Share this job
               </h2>
 
-              <div
-                className="sharethis-inline-share-buttons"
-                data-url={currentUrl}
-                data-title={job.title}
-                data-description={job.description}
-              ></div>
+             <JobShare 
+  title={job.title} 
+  company={job.companyName} 
+/>
+
             </div>
           </div>
 

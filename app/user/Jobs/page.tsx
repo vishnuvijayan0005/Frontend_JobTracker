@@ -22,6 +22,7 @@ export interface Job {
   createdAt: string;
   status:string;
   jobMode:string
+  forcedclose:boolean
 }
 
 const JobsList = () => {

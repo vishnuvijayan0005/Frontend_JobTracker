@@ -90,7 +90,7 @@ export default function AdminCompaniesPage() {
       />
 
       {/* Main */}
-      <div className="flex-1 flex flex-col lg:ml-64">
+      <div className="flex-1 flex flex-col ">
         {/* ===== HEADER (MOBILE + DESKTOP) ===== */}
         <header className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
           <button

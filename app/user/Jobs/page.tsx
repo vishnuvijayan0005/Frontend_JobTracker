@@ -101,10 +101,10 @@ const JobsList = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchJobs(false);
-    }, 400);
+    }, 1000);
 
     return () => clearTimeout(timer);
-  }, [search, jobType]);
+  }, [search, jobType,jobMode]);
 
   if (loading || showLoading) {
     return <Loading text="Fetching your data..." />;

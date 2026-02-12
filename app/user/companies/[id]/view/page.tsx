@@ -8,8 +8,9 @@ import { AppDispatch, Rootstate } from "@/store/store";
 import Loading from "@/components/Loading";
 import Footer from "@/components/Footer";
 import { fetchMe } from "@/store/slice/auth/auth";
-import { Building2, MapPin, Mail, Phone, Globe, CheckCircle, XCircle } from "lucide-react";
-import { fetchCompanies } from "@/store/slice/company/companySlice";
+import { Building2, MapPin, Mail, Phone, Globe } from "lucide-react";
+import { Company, fetchCompanies } from "@/store/slice/company/companySlice";
+import api from "@/utils/baseUrl";
 
 const Companywise = () => {
   const router = useRouter();
@@ -21,11 +22,23 @@ const Companywise = () => {
   const { companies } = useSelector((state: Rootstate) => state.company);
 
   const [showLoading, setShowLoading] = useState(true);
-
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+const [company,setCompany]=useState<Company>()
   /* ================= AUTH ================= */
+  const fetchOnecompany=async()=>{
+try {
+  const res=await api.get(`/user/company/${companyId}`,{withCredentials:true})
+  setCompany(res.data.data.company)
+ setSubscribed(res.data.data.isSubscribed)
+  
+} catch (error) {
+  console.error(error)
+}
+  }
   useEffect(() => {
     dispatch(fetchMe());
-    dispatch(fetchCompanies())
+   fetchOnecompany()
   }, [dispatch]);
 
   useEffect(() => {
@@ -38,8 +51,39 @@ const Companywise = () => {
     return () => clearTimeout(t);
   }, [loading, isAuthenticated, user, router]);
 
-  
-  const company = companies.find((c) => c._id === companyId);
+
+
+
+  /* ================= SUBSCRIBE ================= */
+ const handleSubscribeToggle = async () => {
+  if (!companyId) return;
+  setSubscribing(true);
+
+  try {
+    if (subscribed) {
+      // If already subscribed → call unsubscribe API
+      await api.post(
+        `/user/unsubscribe/${companyId}`,
+        {},
+        { withCredentials: true }
+      );
+      setSubscribed(false);
+    } else {
+      // If not subscribed → call subscribe API
+      await api.post(
+        `/user/subscribe/${companyId}`,
+        {},
+        { withCredentials: true }
+      );
+      setSubscribed(true);
+    }
+  } catch (err) {
+    console.error("Subscription toggle failed:", err);
+  } finally {
+    setSubscribing(false);
+  }
+};
+
 
   if (loading || showLoading) return <Loading text="Loading company details..." />;
   if (!isAuthenticated || !user) return null;
@@ -67,15 +111,29 @@ const Companywise = () => {
           </div>
 
           {/* Name & Basic Info */}
-          <div className="flex-1 space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-              {company.companyName}
-            </h1>
-            <p className="text-lg text-gray-600">{company.companyfield}</p>
+          <div className="flex-1 space-y-3">
+            <div className="flex flex-col md:flex-row md:items-center md:gap-4 justify-between">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                  {company.companyName}
+                </h1>
+                <p className="text-lg text-gray-600">{company.companyfield}</p>
+                <div className="flex items-center gap-4 text-gray-600 text-sm md:text-base mt-2">
+                  <MapPin className="h-5 w-5" />
+                  <span>{company.Companylocation}</span>
+                </div>
+              </div>
 
-            <div className="flex items-center gap-4 text-gray-600 text-sm md:text-base mt-2">
-              <MapPin className="h-5 w-5" />
-              <span>{company.Companylocation}</span>
+              {/* Subscribe Button */}
+            <button
+  onClick={handleSubscribeToggle}
+  disabled={subscribing}
+  className={`px-6 py-3 rounded-full text-white font-medium text-sm md:text-base
+              ${subscribed ? "bg-red-600 hover:bg-red-700" : "bg-sky-600 hover:bg-sky-700"} transition`}
+>
+  {subscribed ? "Subscribed" : "Subscribe"}
+</button>
+
             </div>
           </div>
         </div>

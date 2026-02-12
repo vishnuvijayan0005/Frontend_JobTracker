@@ -47,7 +47,7 @@ export default function AddJobModal({
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [jobType, setJobType] = useState("Full-time");
-  const  [jobMode, setJobMode] = useState("On-Site");
+  const  [jobMode, setJobMode] = useState("Onsite");
  
   const [salary, setSalary] = useState("");
   const [description, setDescription] = useState("");

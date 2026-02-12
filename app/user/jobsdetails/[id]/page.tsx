@@ -51,23 +51,6 @@ const Page = () => {
   const [job, setJob] = useState<Job | null>(null);
   const [applied, setApplied] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [currentUrl, setCurrentUrl] = useState("");
-
-  /* ================= LOAD SHARETHIS SCRIPT ================= */
-
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src =
-      "https://platform-api.sharethis.com/js/sharethis.js#property=YOUR_PROPERTY_ID&product=inline-share-buttons";
-    script.async = true;
-    document.body.appendChild(script);
-
-    setCurrentUrl(window.location.href);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
 
   /* ================= AUTH CHECK ================= */
 
@@ -103,7 +86,6 @@ const Page = () => {
         const res = await api.get(`/user/jobsdetails/${id}`, {
           withCredentials: true,
         });
-
         setJob(res.data.data);
         setApplied(res.data.jobStatus === "applied");
       } catch {
@@ -180,48 +162,112 @@ const Page = () => {
         <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* LEFT SECTION */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Job Title & Company */}
             <div className="bg-white rounded-3xl shadow-sm p-8">
               <h1 className="text-3xl font-bold">{job.title}</h1>
-              <p className="text-gray-600 mt-2 text-lg">
-                {job.companyName}
+              <p className="text-gray-600 mt-2 text-lg">{job.companyName}</p>
+              <p className="mt-1 text-sm text-gray-500">
+                {job.location} • {job.jobType} • {job.experience} yrs
               </p>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">
-                About the role
-              </h2>
+            {/* About the Role */}
+            <div className="bg-white rounded-3xl shadow-sm p-8 space-y-4">
+              <h2 className="text-xl font-semibold">About the Role</h2>
               <p className="whitespace-pre-line">{job.description}</p>
             </div>
 
-            {/* 🔥 SHARE SECTION */}
+            {/* Requirements */}
+            {job.requirements && (
+              <div className="bg-white rounded-3xl shadow-sm p-8 space-y-4">
+                <h2 className="text-xl font-semibold">Requirements</h2>
+                <p className="whitespace-pre-line">{job.requirements}</p>
+              </div>
+            )}
+
+            {/* Qualifications */}
+            {job.qualifications && (
+              <div className="bg-white rounded-3xl shadow-sm p-8 space-y-4">
+                <h2 className="text-xl font-semibold">Qualifications</h2>
+                <p className="whitespace-pre-line">{job.qualifications}</p>
+              </div>
+            )}
+
+            {/* Skills */}
+            {job.skills?.length > 0 && (
+              <div className="bg-white rounded-3xl shadow-sm p-8 space-y-4">
+                <h2 className="text-xl font-semibold">Skills</h2>
+                <div className="flex flex-wrap gap-2">
+                  {job.skills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Benefits */}
+            {job.benefits?.length > 0 && (
+              <div className="bg-white rounded-3xl shadow-sm p-8 space-y-4">
+                <h2 className="text-xl font-semibold">Benefits</h2>
+                <ul className="list-disc list-inside space-y-1">
+                  {job.benefits.map((benefit, idx) => (
+                    <li key={idx}>{benefit}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Interview Process */}
+            {job.interviewProcess && (
+              <div className="bg-white rounded-3xl shadow-sm p-8 space-y-4">
+                <h2 className="text-xl font-semibold">Interview Process</h2>
+                <p className="whitespace-pre-line">{job.interviewProcess}</p>
+              </div>
+            )}
+
+            {/* Tags */}
+            {job.tags?.length > 0 && (
+              <div className="bg-white rounded-3xl shadow-sm p-8 space-y-4">
+                <h2 className="text-xl font-semibold">Tags</h2>
+                <div className="flex flex-wrap gap-2">
+                  {job.tags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="bg-sky-100 text-sky-700 text-sm px-3 py-1 rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/*  SHARE SECTION */}
             <div className="bg-white rounded-3xl shadow-sm p-8">
-              <h2 className="text-lg font-semibold mb-4">
-                Share this job
-              </h2>
-
-             <JobShare 
-  title={job.title} 
-  company={job.companyName} 
-/>
-
+              <h2 className="text-lg font-semibold mb-4">Share this job</h2>
+              <JobShare title={job.title} company={job.companyName} />
             </div>
           </div>
 
           {/* RIGHT SECTION */}
           <div>
-            <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-24">
-              <p className="text-sm text-gray-500 mb-2">Job Status</p>
-
+            <div className="bg-white rounded-3xl shadow-sm p-6 sticky top-24 space-y-4">
+              <p className="text-sm text-gray-500">Job Status</p>
               <p
-                className={`font-semibold mb-6 ${
-                  job.status === "Open"
-                    ? "text-green-600"
-                    : "text-red-600"
+                className={`font-semibold ${
+                  job.status === "Open" ? "text-green-600" : "text-red-600"
                 }`}
               >
                 {job.status}
               </p>
+
+              <p className="text-sm text-gray-500">Salary</p>
+              <p className="font-semibold mb-4">{job.salary}</p>
 
               <button
                 disabled={applied || applying || job.status !== "Open"}
@@ -234,25 +280,20 @@ const Page = () => {
                     : "bg-sky-600 text-white hover:bg-sky-700"
                 }`}
               >
-                {applied
-                  ? "Applied ✓"
-                  : applying
-                  ? "Applying..."
-                  : "Apply Now"}
+                {applied ? "Applied ✓" : applying ? "Applying..." : "Apply Now"}
               </button>
 
               {applied && (
                 <button
                   onClick={() => handleWithdraw(job._id)}
-                  className="mt-4 w-full py-2 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700"
+                  className="w-full py-2 rounded-xl font-semibold bg-red-600 text-white hover:bg-red-700"
                 >
                   Withdraw Application
                 </button>
               )}
 
               <div className="mt-6 text-xs text-gray-500 text-center">
-                Posted on{" "}
-                {new Date(job.createdAt).toLocaleDateString()}
+                Posted on {new Date(job.createdAt).toLocaleDateString()}
               </div>
             </div>
           </div>

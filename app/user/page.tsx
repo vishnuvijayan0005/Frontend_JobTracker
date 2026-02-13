@@ -12,7 +12,7 @@ import Footer from "@/components/Footer";
 import JobSearch from "@/components/SearchComponent";
 import ATSResult from "@/components/ATSResult";
 import ResumeATSForm from "@/components/ResumeATSForm";
-import img from "@/public/homebanner1.jpg"
+import img from "@/public/homebanner1.jpg";
 import Image from "next/image";
 export default function Home() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function Home() {
   const [openAd, setOpenAd] = useState<boolean>(true);
 
   const { loading, isAuthenticated, user } = useSelector(
-    (state: Rootstate) => state.auth
+    (state: Rootstate) => state.auth,
   );
 
   const [showLoading, setShowLoading] = useState(true);
@@ -101,56 +101,56 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 w-full relative">
       {/* Modal-style Fullscreen Banner Ad */}
-   {openAd && (
-  <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/40 backdrop-blur-sm">
-    {/* Banner */}
-    <div className="relative bg-white rounded-2xl shadow-xl max-w-xl w-full mt-10 overflow-hidden flex flex-col md:flex-row">
-      
-      {/* Image */}
-      <div className="md:w-1/3 w-full h-32 md:h-auto relative">
-        <Image
-          src={img}
-          alt="ATS Checker"
-          className="object-cover w-full h-full"
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
-        />
-      </div>
+      {openAd && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/40 backdrop-blur-sm">
+          {/* Banner */}
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-xl w-full mt-10 overflow-hidden flex flex-col md:flex-row">
+            {/* Image */}
+            <div className="md:w-1/3 w-full h-32 md:h-auto relative">
+              <Image
+                src={img}
+                alt="ATS Checker"
+                className="object-cover w-full h-full"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+            </div>
 
-      {/* Content */}
-      <div className="p-4 md:p-6 flex-1 flex flex-col justify-between">
-        <div>
-          <h3 className="text-lg font-bold text-gray-800">
-            Improve Your ATS Score!
-          </h3>
-          <p className="text-sm text-gray-600 mt-2">
-            Upload your resume and see how well it performs against ATS systems.
-          </p>
+            {/* Content */}
+            <div className="p-4 md:p-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">
+                  Improve Your ATS Score!
+                </h3>
+                <p className="text-sm text-gray-600 mt-2">
+                  Upload your resume and see how well it performs against ATS
+                  systems.
+                </p>
+              </div>
+
+              <div className="mt-4 flex justify-between items-center">
+                <button
+                  onClick={() => {
+                    const element = document.getElementById("ats-form");
+                    element?.scrollIntoView({ behavior: "smooth" });
+                    setOpenAd(false);
+                  }}
+                  className="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition"
+                >
+                  Try Now
+                </button>
+
+                <button
+                  onClick={() => setOpenAd(false)}
+                  className="text-gray-400 hover:text-gray-600 font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div className="mt-4 flex justify-between items-center">
-          <button
-            onClick={() => {
-              const element = document.getElementById("ats-form");
-              element?.scrollIntoView({ behavior: "smooth" });
-              setOpenAd(false);
-            }}
-            className="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition"
-          >
-            Try Now
-          </button>
-
-          <button
-            onClick={() => setOpenAd(false)}
-            className="text-gray-400 hover:text-gray-600 font-bold"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Navbar */}
       <UserNavbar />
@@ -171,7 +171,7 @@ export default function Home() {
 
         {/* ATS Result */}
         {result && (
-          <div  className="max-w-4xl mx-auto w-full mt-12">
+          <div className="max-w-4xl mx-auto w-full mt-12">
             <ATSResult
               score={result.score}
               breakdown={result.breakdown}
@@ -187,8 +187,14 @@ export default function Home() {
 
       <style jsx>{`
         @keyframes fadeIn {
-          0% { opacity: 0; transform: translateY(-20px); }
-          100% { opacity: 1; transform: translateY(0); }
+          0% {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .animate-fadeIn {
           animation: fadeIn 0.4s ease-out forwards;

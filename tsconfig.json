@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "app/companyadmin/companyprofile"  ],
+, "app/companyadmin/companyprofile", "app/admin/dashboard/auditlog"  ],
   "exclude": ["node_modules"]
 }

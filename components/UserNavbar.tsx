@@ -47,7 +47,6 @@ export default function UserNavbar() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
-
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Job[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -57,6 +56,13 @@ export default function UserNavbar() {
   // Notifications
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  // Custom Job Alert form
+  const [showAlertForm, setShowAlertForm] = useState(false);
+  const [keywords, setKeywords] = useState("");
+  const [location, setLocation] = useState("");
+  const [jobType, setJobType] = useState("");
+  const [loadingAlert, setLoadingAlert] = useState(false);
 
   const navItems = [
     { icon: <Home size={18} />, text: "Home", path: "/user" },
@@ -105,7 +111,6 @@ export default function UserNavbar() {
 
   useEffect(() => {
     if (mobileOpen) return;
-
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setShowResults(false);
@@ -156,7 +161,9 @@ export default function UserNavbar() {
   /* ================= NOTIFICATIONS ================= */
   const fetchNotifications = async () => {
     try {
-      const res = await api.get("/user/notifications", { withCredentials: true });
+      const res = await api.get("/user/notifications", {
+        withCredentials: true,
+      });
       setNotifications(res.data.data || []);
     } catch (err) {
       console.error(err);
@@ -165,7 +172,11 @@ export default function UserNavbar() {
 
   const markAsRead = async (id: string) => {
     try {
-      await api.patch(`/user/notifications/${id}/read`, {}, { withCredentials: true });
+      await api.patch(
+        `/user/notifications/${id}/read`,
+        {},
+        { withCredentials: true },
+      );
       fetchNotifications();
     } catch (err) {
       console.error(err);
@@ -177,6 +188,37 @@ export default function UserNavbar() {
   }, []);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  /* ================= CREATE JOB ALERT ================= */
+  const handleCreateJobAlert = async () => {
+    if (!keywords.trim()) return;
+    setLoadingAlert(true);
+
+    try {
+      const res = await api.post(
+        "/user/jobalert",
+        {
+          keywords: keywords.split(",").map((k) => k.trim()),
+          location: location.trim() || undefined,
+          jobType: jobType || undefined,
+        },
+        { withCredentials: true },
+      );
+
+      if (res.data.success) {
+        alert("Job alert created successfully!");
+        setKeywords("");
+        setLocation("");
+        setJobType("");
+        setShowAlertForm(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create job alert");
+    } finally {
+      setLoadingAlert(false);
+    }
+  };
 
   /* ================= RENDER ================= */
   return (
@@ -219,11 +261,12 @@ export default function UserNavbar() {
                   className="bg-transparent outline-none px-2 text-sm flex-1"
                 />
               </div>
-
               {showResults && (
                 <div className="absolute top-12 w-full bg-white rounded-xl shadow-xl border z-50 max-h-80 overflow-auto">
                   {results.length === 0 ? (
-                    <p className="p-4 text-sm text-gray-500 text-center">No jobs found</p>
+                    <p className="p-4 text-sm text-gray-500 text-center">
+                      No jobs found
+                    </p>
                   ) : (
                     <>
                       {results.map((job) => (
@@ -233,7 +276,9 @@ export default function UserNavbar() {
                           className="p-4 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
                         >
                           <p className="font-semibold">{job.title}</p>
-                          <p className="text-xs text-gray-500">{job.companyName}</p>
+                          <p className="text-xs text-gray-500">
+                            {job.companyName}
+                          </p>
                           <div className="flex gap-3 text-xs text-gray-400 mt-1">
                             <span className="flex items-center gap-1">
                               <MapPin size={12} /> {job.location}
@@ -247,7 +292,9 @@ export default function UserNavbar() {
                       <button
                         onClick={() => {
                           setShowResults(false);
-                          router.push(`/user/jobs?search=${encodeURIComponent(search)}`);
+                          router.push(
+                            `/user/jobs?search=${encodeURIComponent(search)}`,
+                          );
                           setSearch("");
                         }}
                         className="w-full py-3 text-sm font-medium text-sky-600 hover:bg-gray-50 border-t"
@@ -262,7 +309,10 @@ export default function UserNavbar() {
 
             {/* NOTIFICATION BELL */}
             <div className="relative">
-              <button onClick={() => setNotifOpen(!notifOpen)} className="relative">
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="relative"
+              >
                 <Bell className="h-6 w-6 text-gray-700" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full px-1 text-xs">
@@ -273,22 +323,80 @@ export default function UserNavbar() {
 
               {notifOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg overflow-hidden z-50">
+                  {/* Custom Job Alert Section */}
+                  <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
+                    {!showAlertForm ? (
+                      <button
+                        className="w-full text-left text-blue-600 font-medium hover:text-blue-800"
+                        onClick={() => setShowAlertForm(true)}
+                      >
+                        + Create Custom Job Alert
+                      </button>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="text"
+                          placeholder="Keywords (comma separated)"
+                          value={keywords}
+                          onChange={(e) => setKeywords(e.target.value)}
+                          className="w-full border rounded px-2 py-1 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Location (optional)"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                          className="w-full border rounded px-2 py-1 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Job Type (optional)"
+                          value={jobType}
+                          onChange={(e) => setJobType(e.target.value)}
+                          className="w-full border rounded px-2 py-1 text-sm"
+                        />
+                        <div className="flex justify-end gap-2 mt-1">
+                          <button
+                            className="text-gray-500 text-sm"
+                            onClick={() => setShowAlertForm(false)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="text-blue-600 text-sm font-medium"
+                            onClick={handleCreateJobAlert}
+                            disabled={loadingAlert}
+                          >
+                            {loadingAlert ? "Saving..." : "Save"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Existing Notifications */}
                   {notifications.length === 0 ? (
                     <p className="p-4 text-gray-500">No notifications</p>
                   ) : (
-                    notifications.map((n) => (
-                      <a
-                        key={n._id}
-                        href={n.link || "#"}
-                        className={`block px-4 py-2 hover:bg-gray-100 ${
-                          n.isRead ? "text-gray-500" : "text-gray-900 font-medium"
-                        }`}
-                        onClick={() => markAsRead(n._id)}
-                      >
-                        <strong>{n.title}</strong>
-                        <p className="text-sm">{n.message}</p>
-                      </a>
-                    ))
+                    <div
+                      className={`max-h-[240px] overflow-y-auto`} // Scroll after ~5 messages
+                    >
+                      {notifications.map((n) => (
+                        <a
+                          key={n._id}
+                          href={n.link || "#"}
+                          className={`block px-4 py-2 hover:bg-gray-100 ${
+                            n.isRead
+                              ? "text-gray-500"
+                              : "text-gray-900 font-medium"
+                          }`}
+                          onClick={() => markAsRead(n._id)}
+                        >
+                          <strong>{n.title}</strong>
+                          <p className="text-sm">{n.message}</p>
+                        </a>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -328,7 +436,7 @@ export default function UserNavbar() {
             </Menu>
           </div>
 
-          {/* MOBILE NAV: Hamburger + Bell */}
+          {/* MOBILE NAV */}
           <div className="flex items-center gap-4 md:hidden">
             {/* Notification Bell */}
             <div className="relative">
@@ -343,30 +451,9 @@ export default function UserNavbar() {
                   </span>
                 )}
               </button>
-              {notifOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-lg overflow-hidden z-50">
-                  {notifications.length === 0 ? (
-                    <p className="p-4 text-gray-500">No notifications</p>
-                  ) : (
-                    notifications.map((n) => (
-                      <a
-                        key={n._id}
-                        href={n.link || "#"}
-                        className={`block px-4 py-2 hover:bg-gray-100 ${
-                          n.isRead ? "text-gray-500" : "text-gray-900 font-medium"
-                        }`}
-                        onClick={() => markAsRead(n._id)}
-                      >
-                        <strong>{n.title}</strong>
-                        <p className="text-sm">{n.message}</p>
-                      </a>
-                    ))
-                  )}
-                </div>
-              )}
             </div>
 
-            {/* Hamburger Button */}
+            {/* Hamburger */}
             <button onClick={() => setMobileOpen(true)} className="p-1">
               <MenuIcon className="h-6 w-6 text-gray-700" />
             </button>

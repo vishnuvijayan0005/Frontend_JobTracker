@@ -8,6 +8,8 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import Loading from "@/components/Loading";
 
+
+
 interface Job {
   _id: string;
   title: string;
@@ -19,23 +21,30 @@ interface Job {
   jobMode: string;
 }
 
+interface Pagination {
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
+}
+
+
 const JobsList = () => {
   const router = useRouter();
 
-  /* ================= STATE ================= */
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+
   const [search, setSearch] = useState("");
   const [jobType, setJobType] = useState("");
   const [jobMode, setJobMode] = useState("");
 
+  const [page, setPage] = useState(1);
+  const limit = 5;
+
   const [initialLoading, setInitialLoading] = useState(true);
   const [searching, setSearching] = useState(false);
 
-  /* ================= PAGINATION ================= */
-  const [currentPage, setCurrentPage] = useState(1);
-  const jobsPerPage = 5;
-
-  /* ================= FETCH JOBS ================= */
   const fetchJobs = async (isInitial = false) => {
     isInitial ? setInitialLoading(true) : setSearching(true);
 
@@ -45,47 +54,44 @@ const JobsList = () => {
           search,
           type: jobType,
           jobMode,
+          page,
+          limit,
         },
       });
 
       setJobs(res.data?.data || []);
-      setCurrentPage(1); // 🔑 reset page when data changes
+      setPagination(res.data?.pagination || null);
     } catch (error) {
       console.error("Job fetch error:", error);
       setJobs([]);
+      setPagination(null);
     } finally {
       isInitial ? setInitialLoading(false) : setSearching(false);
     }
   };
 
-  /* ================= INITIAL LOAD ================= */
   useEffect(() => {
     fetchJobs(true);
   }, []);
 
-  /* ================= FILTER CHANGE ================= */
   useEffect(() => {
+    setPage(1); // reset page
     fetchJobs(false);
   }, [jobType, jobMode]);
 
-  /* ================= DEBOUNCED SEARCH ================= */
   useEffect(() => {
     const timer = setTimeout(() => {
+      setPage(1);
       fetchJobs(false);
     }, 400);
 
     return () => clearTimeout(timer);
   }, [search]);
 
-  /* ================= PAGINATION LOGIC ================= */
-  const totalPages = Math.ceil(jobs.length / jobsPerPage);
-  const startIndex = (currentPage - 1) * jobsPerPage;
-  const currentJobs = jobs.slice(
-    startIndex,
-    startIndex + jobsPerPage
-  );
+  useEffect(() => {
+    fetchJobs(false);
+  }, [page]);
 
-  /* ================= LOADING ================= */
   if (initialLoading) {
     return <Loading text="Fetching jobs..." />;
   }
@@ -98,7 +104,6 @@ const JobsList = () => {
         <div className="max-w-5xl mx-auto px-4 py-6">
           <h1 className="text-2xl font-bold mb-4">Latest Jobs</h1>
 
-          {/* ================= SEARCH & FILTER ================= */}
           <div className="flex flex-wrap gap-3 mb-6 items-center">
             <input
               type="text"
@@ -131,20 +136,17 @@ const JobsList = () => {
             </select>
 
             {searching && (
-              <span className="text-xs text-gray-400">
-                Searching…
-              </span>
+              <span className="text-xs text-gray-400">Searching…</span>
             )}
           </div>
 
-          {/* ================= JOB LIST ================= */}
           <div className="space-y-4">
-            {currentJobs.length === 0 ? (
+            {jobs.length === 0 ? (
               <p className="text-center text-gray-500 py-10">
                 No jobs found
               </p>
             ) : (
-              currentJobs.map((job) => (
+              jobs.map((job) => (
                 <JobCard
                   key={job._id}
                   job={job}
@@ -156,25 +158,25 @@ const JobsList = () => {
             )}
           </div>
 
-          {/* ================= PAGINATION ================= */}
-          {totalPages > 1 && (
+          {pagination && pagination.totalPages > 1 && (
             <div className="pt-8 flex justify-center">
               <div className="flex gap-1 bg-white px-3 py-2 rounded-xl shadow-sm ring-1 ring-gray-200">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`h-9 w-9 rounded-lg text-sm transition ${
-                        page === currentPage
-                          ? "bg-sky-600 text-white"
-                          : "hover:bg-gray-100"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
+                {Array.from(
+                  { length: pagination.totalPages },
+                  (_, i) => i + 1
+                ).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`h-9 w-9 rounded-lg text-sm transition ${
+                      p === page
+                        ? "bg-sky-600 text-white"
+                        : "hover:bg-gray-100"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
               </div>
             </div>
           )}

@@ -22,7 +22,7 @@ const nav = [
   { label: "Jobs", href: "/admin/dashboard/jobs", icon: Briefcase },
   { label: "Users", href: "/admin/dashboard/users", icon: Users },
   { label: "Approvals", href: "/admin/dashboard/approvals", icon: ShieldCheck },
-  { label: "Audit Logs", href: "/admin/dashboard/auditlog", icon: FileText },
+  // { label: "Audit Logs", href: "/admin/dashboard/auditlog", icon: FileText },
 ];
 
 export default function SuperAdminSidebar({

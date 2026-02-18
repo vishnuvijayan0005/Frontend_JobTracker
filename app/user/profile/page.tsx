@@ -2,12 +2,13 @@
 
 import Loading from "@/components/Loading";
 import UserNavbar from "@/components/UserNavbar";
-import UserProfileForm from "@/components/Userprofileform";
+import UserProfileForm, {
+  UserProfileSubmitDTO,
+} from "@/components/Userprofileform";
 import { fetchMe } from "@/store/slice/auth/auth";
 import { AppDispatch, Rootstate } from "@/store/store";
 import api from "@/utils/baseUrl";
 import { useRouter } from "next/navigation";
-
 import React, { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,10 +18,11 @@ const Userprofile = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   const { loading, isAuthenticated, user } = useSelector(
-    (state: Rootstate) => state.auth,
+    (state: Rootstate) => state.auth
   );
 
   const [showLoading, setShowLoading] = useState(true);
+
   const [form, setForm] = useState({
     firstName: "",
     middleName: "",
@@ -33,13 +35,12 @@ const Userprofile = () => {
     },
     headline: "",
     bio: "",
-    skills: "",
+    skills: "", // UI input (comma-separated)
     experience: "",
     resume: null as File | null,
     gender: "",
     education: "",
-
-    photo: null as File | null,
+    photo: null as File|string | null,
     photoPreview: "",
     socials: {
       linkedin: "",
@@ -49,6 +50,7 @@ const Userprofile = () => {
     },
   });
 
+  /* ================= AUTH ================= */
   useEffect(() => {
     dispatch(fetchMe());
   }, [dispatch]);
@@ -61,37 +63,85 @@ const Userprofile = () => {
       return;
     }
 
-    const timer = setTimeout(() => setShowLoading(false), 500);
+    const timer = setTimeout(() => setShowLoading(false), 300);
     return () => clearTimeout(timer);
   }, [loading, isAuthenticated, user, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /* ================= FETCH PROFILE ================= */
+  const fetchUserProfile = async () => {
+    try {
+      const res = await api.get("/user/getuserprofile", {
+        withCredentials: true,
+      });
 
+      const profile = res.data?.data?.[0];
+      if (!profile) return;
+
+      setForm((prev) => ({
+        ...prev,
+        firstName: profile.firstName || "",
+        middleName: profile.middleName || "",
+        lastName: profile.lastName || "",
+        phone: profile.phone || "",
+        headline: profile.headline || "",
+        bio: profile.bio || "",
+        skills: Array.isArray(profile.skills)
+          ? profile.skills.join(", ")
+          : "",
+        experience: profile.experience?.toString() || "",
+        gender: profile.gender || "",
+        education: profile.education || "",
+        location: {
+          city: profile.location?.city || "",
+          state: profile.location?.state || "",
+          country: profile.location?.country || "",
+        },
+        socials: {
+          linkedin: profile.socials?.linkedin || "",
+          github: profile.socials?.github || "",
+          portfolio: profile.socials?.portfolio || "",
+          twitter: profile.socials?.twitter || "",
+        },
+        photoPreview: profile.photoUrl || "",
+      }));
+    } catch (error) {
+      console.error("Profile fetch error:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) fetchUserProfile();
+  }, [isAuthenticated]);
+
+  /* ================= SUBMIT ================= */
+  const handleSubmit = async (data: UserProfileSubmitDTO) => {
     try {
       const formData = new FormData();
 
-      if (form.photo) formData.append("photo", form.photo);
-      if (form.resume) formData.append("resume", form.resume);
+      if (data.photo) formData.append("photo", data.photo);
+      if (data.resume) formData.append("resume", data.resume);
 
-      formData.append("firstName", form.firstName);
-      formData.append("middleName", form.middleName);
-      formData.append("lastName", form.lastName);
-      formData.append("phone", form.phone);
-      formData.append("headline", form.headline);
-      formData.append("bio", form.bio);
-      formData.append("experience", form.experience);
-      formData.append("education", form.education);
-      formData.append("gender", form.gender);
-      formData.append("skills", form.skills);
+      formData.append("firstName", data.firstName);
+      formData.append("middleName", data.middleName);
+      formData.append("lastName", data.lastName);
+      formData.append("phone", data.phone);
+      formData.append("headline", data.headline);
+      formData.append("bio", data.bio);
+      formData.append("experience", String(data.experience));
+      formData.append("education", data.education);
+      formData.append("gender", data.gender);
 
-      formData.append("location", JSON.stringify(form.location));
-      formData.append("socials", JSON.stringify(form.socials));
+ 
+      formData.append("skills", JSON.stringify(data.skills));
 
-      const res = await api.post("/user/addprofile", formData, {
+      formData.append("location", JSON.stringify(data.location));
+      formData.append("socials", JSON.stringify(data.socials));
+
+      await api.post("/user/addprofile", formData, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
+
 
       toast.success("Profile saved successfully!");
       router.push("/user");
@@ -100,7 +150,9 @@ const Userprofile = () => {
     }
   };
 
-  if (loading || showLoading) return <Loading text="Fetching your data..." />;
+  if (loading || showLoading) {
+    return <Loading text="Fetching your data..." />;
+  }
 
   if (!isAuthenticated || !user) return null;
 
@@ -108,12 +160,14 @@ const Userprofile = () => {
     <div className="min-h-screen bg-gray-50">
       <UserNavbar />
       <Toaster position="top-center" />
+
       <div className="max-w-3xl mx-auto p-6 bg-white shadow rounded-lg mt-6">
         <h1 className="text-2xl font-bold mb-4">Complete Your Profile</h1>
+
         <UserProfileForm
           form={form}
           setForm={setForm}
-          handleSubmit={handleSubmit}
+          onSubmit={handleSubmit}
         />
       </div>
     </div>

@@ -44,7 +44,7 @@ interface Notification {
 export default function UserNavbar() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-
+const notifRef = useRef<HTMLDivElement | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -220,7 +220,24 @@ export default function UserNavbar() {
     }
   };
 
-  /* ================= RENDER ================= */
+useEffect(() => {
+  if (!notifOpen) return;
+
+  const handleClickOutside = (e: MouseEvent) => {
+    if (
+      notifRef.current &&
+      !notifRef.current.contains(e.target as Node)
+    ) {
+      setNotifOpen(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [notifOpen]);
+
   return (
     <>
       <nav className="sticky top-0 z-[1000] w-full bg-white/90 backdrop-blur border-b">
@@ -307,8 +324,8 @@ export default function UserNavbar() {
               )}
             </div>
 
-            {/* NOTIFICATION BELL */}
-            <div className="relative">
+           <div ref={notifRef} className="relative">
+
               <button
                 onClick={() => setNotifOpen(!notifOpen)}
                 className="relative"
@@ -323,7 +340,7 @@ export default function UserNavbar() {
 
               {notifOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg overflow-hidden z-50">
-                  {/* Custom Job Alert Section */}
+               
                   <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
                     {!showAlertForm ? (
                       <button
@@ -374,12 +391,12 @@ export default function UserNavbar() {
                     )}
                   </div>
 
-                  {/* Existing Notifications */}
+               
                   {notifications.length === 0 ? (
                     <p className="p-4 text-gray-500">No notifications</p>
                   ) : (
                     <div
-                      className={`max-h-[240px] overflow-y-auto`} // Scroll after ~5 messages
+                      className={`max-h-[240px] overflow-y-auto`} 
                     >
                       {notifications.map((n) => (
                         <a
@@ -534,3 +551,6 @@ export default function UserNavbar() {
     </>
   );
 }
+
+
+

@@ -14,6 +14,7 @@ import ATSResult from "@/components/ATSResult";
 import ResumeATSForm from "@/components/ResumeATSForm";
 import img from "@/public/homebanner1.jpg";
 import Image from "next/image";
+import SmallAutoBanner from "@/components/Autobanner";
 export default function Home() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -182,7 +183,13 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
+       <SmallAutoBanner
+              images={[
+                "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&h=300&q=80",
+                "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&h=300&q=80",
+                "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&h=300&q=80",
+              ]}
+            />
       <Footer />
 
       <style jsx>{`

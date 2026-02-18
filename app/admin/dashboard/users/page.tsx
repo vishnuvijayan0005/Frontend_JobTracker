@@ -36,13 +36,16 @@ const fetchusers= async()=>{
         const res=await api.get("/superadmin/users",
             {withCredentials:true}
         )
-        console.log(res.data.data);
+   
         
         setUsers(res.data.data)
+       
+        
     } catch (error) {
         
     }
 }
+ 
   useEffect(() => {
     dispatch(fetchMe());
     fetchusers()
@@ -147,7 +150,7 @@ const fetchusers= async()=>{
             {users.map((u) => (
               <AdminUserCard
                 key={u._id}
-                user={u}
+                users={u}
                 onView={(id) =>
                   router.push(`/admin/dashboard/users/${id}`)
                 }

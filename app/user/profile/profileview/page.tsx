@@ -51,15 +51,15 @@ const Userprofileview = () => {
         });
 
         const profileData = response.data.data[0];
-        // console.log("Raw profileData:", profileData);
+  
 
         const formattedProfile: UserProfile = {
           fullName:
             `${profileData.firstName} ${profileData.middleName || ""} ${profileData.lastName}`.trim(),
           headline: profileData.headline,
           bio: profileData.bio,
-          photo: profileData.photoUrl || "/avatar-placeholder.png",
-          location: profileData.location, // already an object
+          photo: profileData.photoUrl ,
+          location: profileData.location, 
           professional: [
             { label: "Experience", value: profileData.experience + " years" },
             { label: "Education", value: profileData.education },
@@ -96,6 +96,7 @@ const Userprofileview = () => {
   }
 
   if (!userProfile) return null
+console.log(userProfile);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -103,22 +104,32 @@ const Userprofileview = () => {
 
       <main className="max-w-5xl mx-auto p-6 space-y-8">
         {/* ================= HEADER ================= */}
-        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col sm:flex-row items-center gap-6">
-          <img
-            src={userProfile.photo}
-            alt="Profile"
-            className="h-32 w-32 rounded-full object-cover border"
-          />
+      {/* ================= HEADER ================= */}
+<div className="bg-white rounded-2xl shadow-md p-6 flex flex-col sm:flex-row items-center gap-6">
+  <img
+    src={userProfile.photo}
+    alt="Profile"
+    className="h-32 w-32 rounded-full object-cover border"
+  />
 
-          <div className="text-center sm:text-left flex-1">
-            <h1 className="text-2xl font-bold">{userProfile.fullName}</h1>
-            <p className="text-gray-600 mt-1">{userProfile.headline}</p>
-            <p className="text-sm text-gray-500 mt-2">
-              {userProfile.location.city}, {userProfile.location.state},{" "}
-              {userProfile.location.country}
-            </p>
-          </div>
-        </div>
+  <div className="text-center sm:text-left flex-1">
+    <h1 className="text-2xl font-bold">{userProfile.fullName}</h1>
+    <p className="text-gray-600 mt-1">{userProfile.headline}</p>
+    <p className="text-sm text-gray-500 mt-2">
+      {userProfile.location.city}, {userProfile.location.state},{" "}
+      {userProfile.location.country}
+    </p>
+  </div>
+
+
+  <button
+    onClick={() => router.push("/user/profile")}
+    className="mt-4 sm:mt-0 px-6 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 transition"
+  >
+    Edit Profile
+  </button>
+</div>
+
 
         {/* ================= ABOUT ================= */}
         <Section title="About">

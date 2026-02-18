@@ -12,6 +12,7 @@ import Loading from "@/components/Loading";
 import api from "@/utils/baseUrl";
 import Footer from "@/components/Footer";
 
+/* ================= TYPES ================= */
 export interface Job {
   _id: string;
   title: string;
@@ -20,11 +21,12 @@ export interface Job {
   salary: string;
   companyName: string;
   createdAt: string;
-  status:string;
-  jobMode:string
-  forcedclose:boolean
+  status: string;
+  jobMode: string;
+  forcedclose: boolean;
 }
 
+/* ================= COMPONENT ================= */
 const JobsList = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
@@ -33,17 +35,19 @@ const JobsList = () => {
     (state: Rootstate) => state.auth
   );
 
+  /* ================= STATE ================= */
   const [jobs, setJobs] = useState<Job[]>([]);
   const [showLoading, setShowLoading] = useState(true);
 
-  /* 🔍 Search & Filter */
   const [search, setSearch] = useState("");
   const [jobType, setJobType] = useState("");
-  const [searching, setSearching] = useState(false);
   const [jobMode, setJobMode] = useState("");
-  /* Pagination */
+  const [searching, setSearching] = useState(false);
+
+  /* Backend pagination */
   const [currentPage, setCurrentPage] = useState(1);
-  const jobsPerPage = 5;
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 5;
 
   /* ================= AUTH ================= */
   useEffect(() => {
@@ -67,10 +71,10 @@ const JobsList = () => {
 
     const timer = setTimeout(() => setShowLoading(false), 800);
     return () => clearTimeout(timer);
-  }, [loading, isAuthenticated, user]);
+  }, [loading, isAuthenticated, user, router]);
 
-  /* ================= FETCH JOBS (with debounce) ================= */
-  const fetchJobs = async (initial = false) => {
+  /* ================= FETCH JOBS ================= */
+  const fetchJobs = async (page = 1, initial = false) => {
     initial ? setShowLoading(true) : setSearching(true);
 
     try {
@@ -78,12 +82,15 @@ const JobsList = () => {
         params: {
           search,
           type: jobType,
-          jobMode:jobMode
+          jobMode,
+          page,
+          limit,
         },
       });
 
-      setJobs(res.data?.data || []);
-      setCurrentPage(1);
+      setJobs(res.data.data || []);
+      setCurrentPage(res.data.pagination.currentPage);
+      setTotalPages(res.data.pagination.totalPages);
     } catch (err) {
       console.error(err);
       setJobs([]);
@@ -94,17 +101,17 @@ const JobsList = () => {
 
   /* Initial load */
   useEffect(() => {
-    fetchJobs(true);
+    fetchJobs(1, true);
   }, []);
 
-  /* 🔑 Debounce search & filter */
+  /* Debounced search & filters */
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchJobs(false);
-    }, 1000);
+      fetchJobs(1, false); // reset to page 1
+    }, 800);
 
     return () => clearTimeout(timer);
-  }, [search, jobType,jobMode]);
+  }, [search, jobType, jobMode]);
 
   if (loading || showLoading) {
     return <Loading text="Fetching your data..." />;
@@ -112,27 +119,20 @@ const JobsList = () => {
 
   if (!isAuthenticated || !user) return null;
 
-  const handlejobrouting = (id: string) => {
+  const handleJobRouting = (id: string) => {
     router.push(`/user/jobsdetails/${id}`);
   };
 
-  /* ================= PAGINATION ================= */
-  const totalPages = Math.ceil(jobs.length / jobsPerPage);
-  const indexOfLastJob = currentPage * jobsPerPage;
-  const currentJobs = jobs.slice(
-    indexOfLastJob - jobsPerPage,
-    indexOfLastJob
-  );
-
+  /* ================= UI ================= */
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <UserNavbar />
 
       <main className="flex-1">
-        <div className="max-w-5xl mx-auto px-4 py-6 flex min-h-full flex-col">
+        <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col min-h-full">
           <h1 className="text-2xl font-bold mb-4">Latest Jobs</h1>
 
-          {/* 🔍 Search & Filter */}
+          {/* Search & Filters */}
           <div className="flex flex-wrap gap-3 mb-6 items-center">
             <input
               type="text"
@@ -153,7 +153,8 @@ const JobsList = () => {
               <option value="Internship">Internship</option>
               <option value="Remote">Remote</option>
             </select>
-  <select
+
+            <select
               value={jobMode}
               onChange={(e) => setJobMode(e.target.value)}
               className="px-4 py-2 rounded-lg border bg-white text-sm"
@@ -163,23 +164,24 @@ const JobsList = () => {
               <option value="Remote">Remote</option>
               <option value="Hybrid">Hybrid</option>
             </select>
+
             {searching && (
               <span className="text-xs text-gray-400">Searching…</span>
             )}
           </div>
 
-          {/* Job Cards */}
+          {/* Jobs */}
           <div className="space-y-4">
-            {currentJobs.length === 0 ? (
+            {jobs.length === 0 ? (
               <p className="text-center text-gray-500 py-10">
                 No jobs found
               </p>
             ) : (
-              currentJobs.map((job) => (
+              jobs.map((job) => (
                 <JobCard
                   key={job._id}
                   job={job}
-                  onClick={() => handlejobrouting(job._id)}
+                  onClick={() => handleJobRouting(job._id)}
                 />
               ))
             )}
@@ -193,7 +195,7 @@ const JobsList = () => {
                   (page) => (
                     <button
                       key={page}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => fetchJobs(page)}
                       className={`h-9 w-9 rounded-lg text-sm font-medium ${
                         page === currentPage
                           ? "bg-sky-600 text-white"

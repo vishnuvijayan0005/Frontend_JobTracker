@@ -30,7 +30,8 @@ export default function AdminCompaniesPage() {
   /* ================= AUTH ================= */
   useEffect(() => {
     dispatch(fetchMe());
-    dispatch(fetchCompanies());
+ 
+  dispatch(fetchCompanies({}));
   }, [dispatch]);
 
   useEffect(() => {

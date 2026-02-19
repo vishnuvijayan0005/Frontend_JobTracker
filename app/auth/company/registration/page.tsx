@@ -11,6 +11,8 @@ import {
   Globe,
   Layers,
   ArrowLeft,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import api from "@/utils/baseUrl";
 import { safeParse } from "valibot";
@@ -231,25 +233,57 @@ type InputProps = {
   type?: string;
   error?: string;
 };
-function Input({ icon, value, onChange, placeholder, type = "text", error }: InputProps) {
+function Input({
+  icon,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  error,
+}: InputProps) {
+  const isPassword = type === "password";
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div>
       <div className="relative">
+        {/* Left icon */}
         <span className="absolute left-3 top-3 text-gray-400">{icon}</span>
+
+        {/* Input */}
         <input
-          type={type}
+          type={isPassword ? (showPassword ? "text" : "password") : type}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full border rounded-xl px-10 py-3 focus:outline-none focus:ring-2 transition ${
-            error ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-sky-500"
+          className={`w-full border rounded-xl px-10 ${
+            isPassword ? "pr-12" : ""
+          } py-3 focus:outline-none focus:ring-2 transition ${
+            error
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:ring-sky-500"
           }`}
         />
+
+        {/* Eye toggle (only for password) */}
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
       </div>
+
+      {/* Error */}
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );
 }
+
 
 type SelectProps = {
   value: string;

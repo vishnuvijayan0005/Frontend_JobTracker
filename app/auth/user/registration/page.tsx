@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, User, Phone, ArrowLeft } from "lucide-react";
+import { Mail, Lock, User, Phone, ArrowLeft, EyeOff, Eye } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/utils/baseUrl";
 import { safeParse } from "valibot";
@@ -100,6 +100,13 @@ export default function RegisterPage() {
 
       {/* Form */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white/95 md:bg-white backdrop-blur-xl rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 text-center">
+            Signup to CareerNest
+          </h2>
+              <p className="text-center text-gray-500">
+            Fill your details
+          </p>
         <form
           onSubmit={handleRegister}
           className="w-full max-w-md space-y-4"
@@ -116,12 +123,24 @@ export default function RegisterPage() {
             Sign Up
           </button>
         </form>
+        <p className="text-center text-gray-500">
+            Are you a company?{" "}
+            <button
+              type="button"
+              onClick={() => router.push("/auth/company/registration")}
+              className="text-sky-600 hover:underline font-medium"
+            >
+              Register your company
+            </button>
+          </p>
+        <div/>
+      </div>
       </div>
     </div>
   );
 }
 
-/* Reusable Input */
+
 function Input({
   icon,
   value,
@@ -137,21 +156,46 @@ function Input({
   type?: string;
   error?: string;
 }) {
+  const isPassword = type === "password";
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div>
       <div className="relative">
+        {/* Left icon */}
         <span className="absolute left-3 top-3 text-gray-400">{icon}</span>
+
+        {/* Input */}
         <input
-          type={type}
+          type={isPassword ? (showPassword ? "text" : "password") : type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full px-10 py-3 border rounded-xl ${
-            error ? "border-red-500" : "border-gray-300"
+          className={`w-full px-10 ${
+            isPassword ? "pr-12" : ""
+          } py-3 border rounded-xl focus:outline-none focus:ring-2 transition ${
+            error
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:ring-sky-500"
           }`}
         />
+
+        {/* Eye toggle (password only) */}
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
       </div>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {/* Error */}
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );
 }
+

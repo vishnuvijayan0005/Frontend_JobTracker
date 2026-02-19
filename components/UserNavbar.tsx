@@ -538,7 +538,19 @@ useEffect(() => {
                 >
                   {item.icon} {item.text}
                 </button>
+                
               ))}
+               {/* Divider */}
+  <hr className="my-3" />
+
+  {/* LOGOUT */}
+  <button
+    onClick={handleLogout}
+    className="flex items-center gap-3 py-2 text-sm text-red-600"
+  >
+    <LogOut size={18} />
+    Logout
+  </button>
             </div>
           </div>
         </div>

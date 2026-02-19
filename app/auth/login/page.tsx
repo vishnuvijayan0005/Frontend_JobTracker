@@ -179,21 +179,48 @@ type InputProps = {
   type?: string;
   error?: string;
 };
-function Input({ icon, value, onChange, placeholder, type = "text", error }: InputProps) {
+function Input({
+  icon,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  error,
+}: InputProps) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === "password";
+
   return (
     <div>
       <div className="relative">
+        {/* Left icon */}
         <span className="absolute left-3 top-3 text-gray-400">{icon}</span>
+
+        {/* Input */}
         <input
-          type={type}
+          type={isPassword ? (show ? "text" : "password") : type}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full border rounded-xl px-10 py-3 focus:outline-none focus:ring-2 transition ${
-            error ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-sky-500"
+          className={`w-full border rounded-xl px-10 pr-12 py-3 focus:outline-none focus:ring-2 transition ${
+            error
+              ? "border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:ring-sky-500"
           }`}
         />
+
+        {/* Eye button (only for password) */}
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShow((prev) => !prev)}
+            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+          >
+            {show ? <Lock size={18} /> : <Lock size={18} />}
+          </button>
+        )}
       </div>
+
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );

@@ -51,3 +51,7 @@ export const LoginSchema = v.object({
   email: emailSchema,
   password: passwordSchema,
 });
+export const resetpassword = v.object({
+
+  password: passwordSchema,
+});

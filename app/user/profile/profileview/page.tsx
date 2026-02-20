@@ -96,7 +96,7 @@ const Userprofileview = () => {
   }
 
   if (!userProfile) return null
-console.log(userProfile);
+// console.log(userProfile);
 
   return (
     <div className="min-h-screen bg-gray-50">

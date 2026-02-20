@@ -38,7 +38,7 @@ export default function ResumeATSForm({ onResult }: ResumeATSFormProps) {
 );
 
       
-console.log(res.data);
+// console.log(res.data);
 
       onResult(res.data); 
     } catch (err) {

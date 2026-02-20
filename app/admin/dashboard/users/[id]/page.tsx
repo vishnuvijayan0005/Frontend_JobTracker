@@ -43,7 +43,7 @@ const [users,setUsers]=useState<AdminUserProfile>()
         { withCredentials: true }
       );
 
-      console.log(res.data.data);
+      // console.log(res.data.data);
       setUsers(res.data.data);
     } catch (error) {
       console.error("Fetch user error:", error);

@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import api from "@/utils/baseUrl";
 import { safeParse } from "valibot";
 
-import img2 from "@/public/banner2.png";
+import img2 from "@/public/banner2.jpg";
 import { RegisterSchema } from "@/lib/validators/login.schema";
 
 export default function RegisterPage() {

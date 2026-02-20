@@ -18,7 +18,7 @@ import api from "@/utils/baseUrl";
 import { safeParse } from "valibot";
 import { CompanyRegisterSchema } from "@/lib/validators/company-registration";
 import toast from "react-hot-toast";
-import img3 from "@/public/meeting-room-office.jpg";
+import img3 from "@/public/banner3.jpg";
 
 /* Error type must match schema */
 type Errors = Partial<Record<

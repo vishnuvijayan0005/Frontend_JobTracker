@@ -12,11 +12,11 @@ import {
   Building2,
   X,
   Search,
-  FileText,
   Bookmark,
   Settings2,
   Bell,
   MapPin,
+  CheckCheck,
 } from "lucide-react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 
@@ -44,20 +44,22 @@ interface Notification {
 export default function UserNavbar() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-const notifRef = useRef<HTMLDivElement | null>(null);
+  
+  const notifRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLDivElement | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Job[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchRef = useRef<HTMLDivElement | null>(null);
 
   // Notifications
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
 
-  // Custom Job Alert form
+  // Job Alert Form
   const [showAlertForm, setShowAlertForm] = useState(false);
   const [keywords, setKeywords] = useState("");
   const [location, setLocation] = useState("");
@@ -67,21 +69,9 @@ const notifRef = useRef<HTMLDivElement | null>(null);
   const navItems = [
     { icon: <Home size={18} />, text: "Home", path: "/user" },
     { icon: <Briefcase size={18} />, text: "Jobs", path: "/user/Jobs" },
-    {
-      icon: <Building2 size={18} />,
-      text: "Companies",
-      action: () => setCompanyOpen(true),
-    },
-    {
-      icon: <Bookmark size={18} />,
-      text: "Applied Jobs",
-      path: "/user/applied",
-    },
-    {
-      icon: <Settings2 size={18} />,
-      text: "Profile View",
-      path: "/user/profile/profileview",
-    },
+    { icon: <Building2 size={18} />, text: "Companies", action: () => setCompanyOpen(true) },
+    { icon: <Bookmark size={18} />, text: "Applied Jobs", path: "/user/applied" },
+    { icon: <Settings2 size={18} />, text: "Profile View", path: "/user/profile/profileview" },
   ];
 
   /* ================= SEARCH ================= */
@@ -91,26 +81,18 @@ const notifRef = useRef<HTMLDivElement | null>(null);
       setShowResults(false);
       return;
     }
-
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await api.get("/user/fetchsearch", {
-          params: { search, limit: 5 },
-        });
+        const res = await api.get("/user/fetchsearch", { params: { search, limit: 5 } });
         setResults(res.data?.data || []);
         setShowResults(true);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) { console.error(err); }
     }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [search]);
 
+  /* ================= SIDE EFFECTS ================= */
   useEffect(() => {
-    if (mobileOpen) return;
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setShowResults(false);
@@ -118,16 +100,25 @@ const notifRef = useRef<HTMLDivElement | null>(null);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [mobileOpen]);
+  }, []);
 
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
+    if (!notifOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
     };
-  }, [mobileOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [notifOpen]);
 
-  /* ================= LOGOUT ================= */
+  useEffect(() => {
+    document.body.style.overflow = (mobileOpen || notifOpen) ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen, notifOpen]);
+
+  /* ================= HANDLERS ================= */
   const handleLogout = async () => {
     await dispatch(logoutUser());
     router.replace("/");
@@ -142,427 +133,268 @@ const notifRef = useRef<HTMLDivElement | null>(null);
   const goToJob = (id: string) => {
     setSearch("");
     setShowResults(false);
-    setMobileOpen(false);
     router.push(`/user/jobsdetails/${id}`);
   };
 
-  const handleEnterSearch = () => {
-    if (!search.trim()) return;
-    setShowResults(false);
-    setMobileOpen(false);
-    router.push(`/user/jobs?search=${encodeURIComponent(search)}`);
-    setSearch("");
-  };
-
-  useEffect(() => {
-    setShowResults(false);
-  }, [router]);
-
-  /* ================= NOTIFICATIONS ================= */
+  /* ================= NOTIFICATIONS LOGIC ================= */
   const fetchNotifications = async () => {
     try {
-      const res = await api.get("/user/notifications", {
-        withCredentials: true,
-      });
+      const res = await api.get("/user/notifications", { withCredentials: true });
       setNotifications(res.data.data || []);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const markAsRead = async (id: string) => {
     try {
-      await api.patch(
-        `/user/notifications/${id}/read`,
-        {},
-        { withCredentials: true },
-      );
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      await api.patch(`/user/notifications/${id}/read`, {}, { withCredentials: true });
+    } catch (err) { 
+      console.error(err); 
       fetchNotifications();
-    } catch (err) {
-      console.error(err);
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
+  const markAllAsRead = async () => {
+    try {
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      await api.patch(`/user/notifications/read-all`, {}, { withCredentials: true });
+    } catch (err) {
+      console.error(err);
+      fetchNotifications();
+    }
+  };
 
+  useEffect(() => { fetchNotifications(); }, []);
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  /* ================= CREATE JOB ALERT ================= */
   const handleCreateJobAlert = async () => {
     if (!keywords.trim()) return;
     setLoadingAlert(true);
-
     try {
-      const res = await api.post(
-        "/user/jobalert",
-        {
-          keywords: keywords.split(",").map((k) => k.trim()),
-          location: location.trim() || undefined,
-          jobType: jobType || undefined,
-        },
-        { withCredentials: true },
-      );
-
+      const res = await api.post("/user/jobalert", {
+        keywords: keywords.split(",").map((k) => k.trim()),
+        location: location.trim() || undefined,
+        jobType: jobType || undefined,
+      }, { withCredentials: true });
       if (res.data.success) {
-        alert("Job alert created successfully!");
-        setKeywords("");
-        setLocation("");
-        setJobType("");
+        alert("Job alert created!");
+        setKeywords(""); setLocation(""); setJobType("");
         setShowAlertForm(false);
       }
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create job alert");
-    } finally {
-      setLoadingAlert(false);
-    }
+    } catch (err) { alert("Failed to create alert"); } finally { setLoadingAlert(false); }
   };
 
-useEffect(() => {
-  if (!notifOpen) return;
+  /* ================= COMPONENT: NOTIFICATION LIST ================= */
+  const NotificationsContent = () => (
+    <div className="flex flex-col h-full bg-white">
+      {!showAlertForm ? (
+        <button
+          className="w-full text-left text-blue-600 font-medium hover:text-blue-800 px-4 py-3 border-b bg-blue-50/30 transition-colors"
+          onClick={() => setShowAlertForm(true)}
+        >
+          + Create Custom Job Alert
+        </button>
+      ) : (
+        <div className="flex flex-col gap-2 px-4 py-3 border-b bg-gray-50">
+          <input type="text" placeholder="Keywords..." value={keywords} onChange={(e) => setKeywords(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+          <input type="text" placeholder="Location..." value={location} onChange={(e) => setLocation(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+          <div className="flex justify-end gap-2 mt-1">
+            <button className="text-gray-500 text-xs" onClick={() => setShowAlertForm(false)}>Cancel</button>
+            <button className="text-blue-600 text-xs font-bold" onClick={handleCreateJobAlert} disabled={loadingAlert}>{loadingAlert ? "Saving..." : "Save"}</button>
+          </div>
+        </div>
+      )}
 
-  const handleClickOutside = (e: MouseEvent) => {
-    if (
-      notifRef.current &&
-      !notifRef.current.contains(e.target as Node)
-    ) {
-      setNotifOpen(false);
-    }
-  };
+      {/* MARK ALL AS READ HEADER */}
+      {notifications.length > 0 && (
+        <div className="flex justify-between items-center px-4 py-2 border-b bg-gray-50/50">
+          <span className="text-xs font-semibold text-gray-500">Recent</span>
+          {unreadCount > 0 && (
+            <button 
+              onClick={markAllAsRead} 
+              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 font-medium transition-colors"
+            >
+              <CheckCheck size={14} />
+              Mark all as read
+            </button>
+          )}
+        </div>
+      )}
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, [notifOpen]);
+      {notifications.length === 0 ? (
+        <p className="p-10 text-center text-gray-500 text-sm">No notifications</p>
+      ) : (
+        <div className="flex-1 overflow-y-auto max-h-[400px]">
+          {notifications.map((n) => (
+            <div
+              key={n._id}
+              onClick={() => { markAsRead(n._id); if (n.link) router.push(n.link); }}
+              className={`block px-4 py-4 border-b cursor-pointer transition-colors hover:bg-gray-50 ${
+                n.isRead ? "bg-white opacity-75" : "bg-sky-50/50"
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <p className={`text-sm ${n.isRead ? "text-gray-600 font-normal" : "text-gray-900 font-bold"}`}>
+                  {n.title}
+                </p>
+                {!n.isRead && <span className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 flex-shrink-0" />}
+              </div>
+              <p className={`text-xs mt-1 ${n.isRead ? "text-gray-400" : "text-gray-600"}`}>
+                {n.message}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
       <nav className="sticky top-0 z-[1000] w-full bg-white/90 backdrop-blur border-b">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          {/* LOGO */}
-          <div
-            onClick={() => router.push("/user")}
-            className="flex items-center gap-3 cursor-pointer"
-          >
-            <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">J</span>
-            </div>
+          <div onClick={() => router.push("/user")} className="flex items-center gap-3 cursor-pointer">
+            <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg">J</div>
             <h1 className="text-xl font-bold">CareerNest</h1>
           </div>
 
-          {/* DESKTOP NAV */}
-          <div className="hidden md:flex items-center gap-6 relative">
+          {/* DESKTOP */}
+          <div className="hidden md:flex items-center gap-6">
             {navItems.slice(0, 3).map((item, idx) => (
-              <button
-                key={idx}
-                onClick={() => nav(item)}
-                className="flex items-center gap-2 hover:text-sky-600"
-              >
+              <button key={idx} onClick={() => nav(item)} className="flex items-center gap-2 hover:text-sky-600 font-medium text-sm text-gray-700">
                 {item.icon} {item.text}
               </button>
             ))}
 
-            {/* SEARCH */}
-            <div ref={searchRef} className="relative w-72">
+            {/* SEARCH BOX */}
+            <div ref={searchRef} className="relative w-64">
               <div className="flex items-center bg-gray-100 rounded-full px-4 py-2">
-                <Search size={16} />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onFocus={() => search && setShowResults(true)}
-                  onKeyDown={(e) => e.key === "Enter" && handleEnterSearch()}
-                  placeholder="Search jobs..."
-                  className="bg-transparent outline-none px-2 text-sm flex-1"
-                />
+                <Search size={16} className="text-gray-400" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} onFocus={() => search && setShowResults(true)} placeholder="Search..." className="bg-transparent outline-none px-2 text-sm flex-1" />
               </div>
               {showResults && (
-                <div className="absolute top-12 w-full bg-white rounded-xl shadow-xl border z-50 max-h-80 overflow-auto">
-                  {results.length === 0 ? (
-                    <p className="p-4 text-sm text-gray-500 text-center">
-                      No jobs found
-                    </p>
-                  ) : (
-                    <>
-                      {results.map((job) => (
-                        <div
-                          key={job._id}
-                          onClick={() => goToJob(job._id)}
-                          className="p-4 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
-                        >
-                          <p className="font-semibold">{job.title}</p>
-                          <p className="text-xs text-gray-500">
-                            {job.companyName}
-                          </p>
-                          <div className="flex gap-3 text-xs text-gray-400 mt-1">
-                            <span className="flex items-center gap-1">
-                              <MapPin size={12} /> {job.location}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Briefcase size={12} /> {job.jobType}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => {
-                          setShowResults(false);
-                          router.push(
-                            `/user/jobs?search=${encodeURIComponent(search)}`,
-                          );
-                          setSearch("");
-                        }}
-                        className="w-full py-3 text-sm font-medium text-sky-600 hover:bg-gray-50 border-t"
-                      >
-                        View more jobs →
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-
-           <div ref={notifRef} className="relative">
-
-              <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                className="relative"
-              >
-                <Bell className="h-6 w-6 text-gray-700" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full px-1 text-xs">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {notifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg overflow-hidden z-50">
-               
-                  <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
-                    {!showAlertForm ? (
-                      <button
-                        className="w-full text-left text-blue-600 font-medium hover:text-blue-800"
-                        onClick={() => setShowAlertForm(true)}
-                      >
-                        + Create Custom Job Alert
-                      </button>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <input
-                          type="text"
-                          placeholder="Keywords (comma separated)"
-                          value={keywords}
-                          onChange={(e) => setKeywords(e.target.value)}
-                          className="w-full border rounded px-2 py-1 text-sm"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Location (optional)"
-                          value={location}
-                          onChange={(e) => setLocation(e.target.value)}
-                          className="w-full border rounded px-2 py-1 text-sm"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Job Type (optional)"
-                          value={jobType}
-                          onChange={(e) => setJobType(e.target.value)}
-                          className="w-full border rounded px-2 py-1 text-sm"
-                        />
-                        <div className="flex justify-end gap-2 mt-1">
-                          <button
-                            className="text-gray-500 text-sm"
-                            onClick={() => setShowAlertForm(false)}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            className="text-blue-600 text-sm font-medium"
-                            onClick={handleCreateJobAlert}
-                            disabled={loadingAlert}
-                          >
-                            {loadingAlert ? "Saving..." : "Save"}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-               
-                  {notifications.length === 0 ? (
-                    <p className="p-4 text-gray-500">No notifications</p>
-                  ) : (
-                    <div
-                      className={`max-h-[240px] overflow-y-auto`} 
-                    >
-                      {notifications.map((n) => (
-                        <a
-                          key={n._id}
-                          href={n.link || "#"}
-                          className={`block px-4 py-2 hover:bg-gray-100 ${
-                            n.isRead
-                              ? "text-gray-500"
-                              : "text-gray-900 font-medium"
-                          }`}
-                          onClick={() => markAsRead(n._id)}
-                        >
-                          <strong>{n.title}</strong>
-                          <p className="text-sm">{n.message}</p>
-                        </a>
-                      ))}
+                <div className="absolute top-12 w-full bg-white rounded-xl shadow-xl border z-50 overflow-hidden">
+                  {results.map((job) => (
+                    <div key={job._id} onClick={() => goToJob(job._id)} className="p-3 hover:bg-gray-50 border-b last:border-0 cursor-pointer">
+                      <p className="text-sm font-semibold">{job.title}</p>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* USER MENU */}
+            {/* NOTIF DESKTOP */}
+            <div ref={notifRef} className="relative">
+              <button onClick={() => setNotifOpen(!notifOpen)} className="p-1 relative outline-none">
+                <Bell className="h-6 w-6 text-gray-700 hover:text-sky-600 transition-colors" />
+                {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full h-4 w-4 flex items-center justify-center text-[10px] border-2 border-white">{unreadCount}</span>}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 mt-3 w-80 shadow-2xl rounded-xl border z-50 overflow-hidden">
+                  <NotificationsContent />
+                </div>
+              )}
+            </div>
+
+            {/* USER PROFILE DROPDOWN (RESTORED) */}
             <Menu as="div" className="relative">
-              <MenuButton>
-                <UserCircle size={36} />
+              <MenuButton className="flex items-center outline-none">
+                <UserCircle size={36} className="text-gray-600 hover:text-sky-600 transition-colors" />
               </MenuButton>
-              <MenuItems className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-xl border">
+              <MenuItems className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl border overflow-hidden z-[1002]">
                 <MenuItem>
-                  <button
-                    onClick={() => router.push("/user/profile/profileview")}
-                    className="flex w-full gap-3 px-5 py-2 text-sm"
-                  >
-                    Profile
-                  </button>
+                  {({ active }) => (
+                    <button
+                      onClick={() => router.push("/user/profile/profileview")}
+                      className={`flex w-full px-4 py-3 text-sm font-medium transition-colors ${
+                        active ? "bg-gray-50 text-sky-600" : "text-gray-700"
+                      }`}
+                    >
+                      Profile
+                    </button>
+                  )}
                 </MenuItem>
                 <MenuItem>
-                  <button
-                    onClick={() => router.push("/user/applied")}
-                    className="flex w-full gap-3 px-5 py-2 text-sm"
-                  >
-                    Applied Jobs
-                  </button>
+                  {({ active }) => (
+                    <button
+                      onClick={() => router.push("/user/applied")}
+                      className={`flex w-full px-4 py-3 text-sm font-medium transition-colors ${
+                        active ? "bg-gray-50 text-sky-600" : "text-gray-700"
+                      }`}
+                    >
+                      Applied Jobs
+                    </button>
+                  )}
                 </MenuItem>
+                <div className="border-t border-gray-100" />
                 <MenuItem>
-                  <button
-                    onClick={handleLogout}
-                    className="flex w-full gap-3 px-5 py-2 text-sm text-red-600"
-                  >
-                    Logout
-                  </button>
+                  {({ active }) => (
+                    <button
+                      onClick={handleLogout}
+                      className={`flex w-full px-4 py-3 text-sm font-medium transition-colors ${
+                        active ? "bg-red-50 text-red-700" : "text-red-600"
+                      }`}
+                    >
+                      Logout
+                    </button>
+                  )}
                 </MenuItem>
               </MenuItems>
             </Menu>
           </div>
 
-          {/* MOBILE NAV */}
+          {/* MOBILE TOGGLES */}
           <div className="flex items-center gap-4 md:hidden">
-            {/* Notification Bell */}
-            <div className="relative">
-              <button
-                onClick={() => setNotifOpen(!notifOpen)}
-                className="relative p-1"
-              >
-                <Bell className="h-6 w-6 text-gray-700" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full px-1 text-xs">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* Hamburger */}
-            <button onClick={() => setMobileOpen(true)} className="p-1">
-              <MenuIcon className="h-6 w-6 text-gray-700" />
+            <button onClick={() => setNotifOpen(true)} className="relative p-1">
+              <Bell className="h-6 w-6 text-gray-700" />
+              {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full h-4 w-4 flex items-center justify-center text-[10px]">{unreadCount}</span>}
             </button>
+            <button onClick={() => setMobileOpen(true)}><MenuIcon className="h-6 w-6 text-gray-700" /></button>
           </div>
         </div>
       </nav>
 
-      {/* MOBILE MENU */}
-      {mobileOpen && (
+      {/* MOBILE NOTIFICATION FULL PANEL */}
+      {notifOpen && (
         <div className="fixed inset-0 z-[9999] md:hidden">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl flex flex-col overflow-y-auto">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
-              <h2 className="font-semibold text-lg">Menu</h2>
-              <X onClick={() => setMobileOpen(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={() => setNotifOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-full sm:w-80 bg-white flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="font-bold text-lg">Notifications</h2>
+              <button onClick={() => setNotifOpen(false)}><X className="h-6 w-6 text-gray-500" /></button>
             </div>
-
-            {/* MOBILE SEARCH */}
-            <div className="px-5 py-4 border-b">
-              <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2">
-                <Search size={16} />
-                <input
-                  className="bg-transparent outline-none px-2 text-sm flex-1"
-                  placeholder="Search jobs..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setShowResults(true);
-                  }}
-                  onKeyDown={(e) => e.key === "Enter" && handleEnterSearch()}
-                />
-              </div>
-
-              {showResults && (
-                <div className="mt-3 bg-white rounded-xl border max-h-64 overflow-auto">
-                  {results.map((job) => (
-                    <div
-                      key={job._id}
-                      onClick={() => goToJob(job._id)}
-                      className="p-3 border-b hover:bg-gray-50 cursor-pointer"
-                    >
-                      <p className="text-sm font-medium">{job.title}</p>
-                      <p className="text-xs text-gray-500">{job.companyName}</p>
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => router.push("/user/jobs")}
-                    className="w-full py-3 text-sm font-medium text-sky-600 hover:bg-gray-50"
-                  >
-                    View more →
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="px-5 py-4 flex flex-col gap-3">
-              {navItems.map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => nav(item)}
-                  className="flex gap-3 py-2 text-sm"
-                >
-                  {item.icon} {item.text}
-                </button>
-                
-              ))}
-               {/* Divider */}
-  <hr className="my-3" />
-
-  {/* LOGOUT */}
-  <button
-    onClick={handleLogout}
-    className="flex items-center gap-3 py-2 text-sm text-red-600"
-  >
-    <LogOut size={18} />
-    Logout
-  </button>
+            <div className="flex-1 overflow-hidden">
+              <NotificationsContent />
             </div>
           </div>
         </div>
       )}
 
-      <CompanySwitcherModal
-        isOpen={companyOpen}
-        onClose={() => setCompanyOpen(false)}
-      />
+      {/* MOBILE MENU PANEL */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[9999] md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-72 bg-white p-6 shadow-xl animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="font-bold text-xl">Menu</h2>
+              <button onClick={() => setMobileOpen(false)}><X size={24} /></button>
+            </div>
+            <div className="flex flex-col gap-5">
+              {navItems.map((item, idx) => (
+                <button key={idx} onClick={() => nav(item)} className="flex items-center gap-4 text-gray-700 font-medium">
+                  <span className="text-sky-500">{item.icon}</span> {item.text}
+                </button>
+              ))}
+              <hr />
+              <button onClick={handleLogout} className="flex items-center gap-4 text-red-600 font-medium">
+                <LogOut size={18} /> Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <CompanySwitcherModal isOpen={companyOpen} onClose={() => setCompanyOpen(false)} />
     </>
   );
 }
-
-
-

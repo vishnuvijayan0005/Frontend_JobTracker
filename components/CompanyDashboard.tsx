@@ -82,7 +82,8 @@ export default function CompanyDashboard() {
         params: { search: query },
         withCredentials: true,
       });
-      setSearchResults(res.data.data.jobs || []);
+      
+      setSearchResults(res.data.data.jobsdata || []);
     } catch (err) {
       console.error("Search failed", err);
     }

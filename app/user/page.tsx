@@ -102,56 +102,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 w-full relative">
       {/* Modal-style Fullscreen Banner Ad */}
-      {openAd && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/40 backdrop-blur-sm">
-          {/* Banner */}
-          <div className="relative bg-white rounded-2xl shadow-xl max-w-xl w-full mt-10 overflow-hidden flex flex-col md:flex-row">
-            {/* Image */}
-            <div className="md:w-1/3 w-full h-32 md:h-auto relative">
-              <Image
-                src={img}
-                alt="ATS Checker"
-                className="object-cover w-full h-full"
-                fill
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
-            </div>
-
-            {/* Content */}
-            <div className="p-4 md:p-6 flex-1 flex flex-col justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-gray-800">
-                  Improve Your ATS Score!
-                </h3>
-                <p className="text-sm text-gray-600 mt-2">
-                  Upload your resume and see how well it performs against ATS
-                  systems.
-                </p>
-              </div>
-
-              <div className="mt-4 flex justify-between items-center">
-                <button
-                  onClick={() => {
-                    const element = document.getElementById("ats-form");
-                    element?.scrollIntoView({ behavior: "smooth" });
-                    setOpenAd(false);
-                  }}
-                  className="px-4 py-2 bg-sky-600 text-white font-semibold rounded-lg hover:bg-sky-700 transition"
-                >
-                  Try Now
-                </button>
-
-                <button
-                  onClick={() => setOpenAd(false)}
-                  className="text-gray-400 hover:text-gray-600 font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* Navbar */}
       <UserNavbar />

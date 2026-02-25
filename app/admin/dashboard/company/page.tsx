@@ -59,14 +59,17 @@ export default function AdminCompaniesPage() {
       </div>
     );
   }
+       
 
   /* ================= ACTIONS ================= */
   const enableCompany = async (id: string) => {
     const res = await api.patch(
       `/superadmin/company/${id}/status`,
       { status: false },
-      { withCredentials: false },
+      { withCredentials: true },
     );
+    // console.log(res.data);
+    
     dispatch(fetchCompanies());
     toast.success(res.data.message);
   };
@@ -75,7 +78,7 @@ export default function AdminCompaniesPage() {
     const res = await api.patch(
       `/superadmin/company/${id}/status`,
       { status: true },
-      { withCredentials: false },
+      { withCredentials: true },
     );
     dispatch(fetchCompanies());
     toast.success(res.data.message);

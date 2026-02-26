@@ -62,24 +62,47 @@ export default function RegisterPage() {
       setErrors(fieldErrors);
       return;
     }
+  try {
+    // 1️⃣ Register user
+    const res = await api.post("/auth/registration", {
+      firstName,
+      middleName,
+      lastName,
+      phone,
+      email,
+      password,
+    });
 
-    try {
-      const res = await api.post("/auth/registration", {
-        firstName,
-        middleName,
-        lastName,
-        phone,
-        email,
-        password,
-      });
-
-      if (res.data.success) {
-        toast.success("Registration successful! Please login.");
-        router.push("/auth/login");
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Registration failed");
+    if (!res.data.success) {
+      throw new Error("Registration failed");
     }
+
+    const { email: userEmail, verifyToken } = res.data.data;
+
+    // 2️⃣ Lazy-load EmailJS (Turbopack SAFE)
+    const emailjs = (await import("@emailjs/browser")).default;
+
+    await emailjs.send(
+      process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+      process.env.NEXT_PUBLIC_EMAILJS_VERIFY_TEMPLATE_ID!,
+      {
+        user_email: userEmail,
+        verify_link: `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email/${verifyToken}`,
+      },
+      process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+    );
+
+    // 3️⃣ Success + redirect
+    toast.success(
+      "Registration successful! Please check your email to activate your account."
+    );
+
+    router.push("/auth/verify-info");
+
+  } catch (err: any) {
+    console.error("Registration error:", err);
+    toast.error(err?.response?.data?.message || err.message || "Registration failed");
+  }
   };
 
   return (

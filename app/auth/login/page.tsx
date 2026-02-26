@@ -56,10 +56,17 @@ export default function LoginPage() {
         toast.success("Welcome to the future");
         router.replace("/user");
       }
-    } catch (err) {
-      console.error("Login failed", err);
-      toast.error("Login failed. Check your credentials.");
-    }
+ } catch (err: any) {
+  // console.error("Login failed", err);
+
+  const message =
+    typeof err === "string"
+      ? err
+      : err?.message || "Login failed";
+
+  // 🔔 Show proper toast
+  toast.error(message);
+}
   };
 
   return (

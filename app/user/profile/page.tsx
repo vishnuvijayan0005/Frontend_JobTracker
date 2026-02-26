@@ -142,6 +142,7 @@ const Userprofile = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+// console.log(formData);
 
       toast.success("Profile saved successfully!");
       router.push("/user");

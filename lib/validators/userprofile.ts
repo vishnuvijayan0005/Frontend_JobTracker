@@ -67,14 +67,17 @@ export const UserProfileSchema = v.object({
     v.maxLength(500)
   ),
 
-  skills: v.array(
+skills: v.pipe(
+  v.array(
     v.pipe(
       v.string(),
       v.trim(),
       v.nonEmpty("Skill cannot be empty"),
-      v.minLength(2, "Skill must be at least 2 characters")
+      v.minLength(1, "Skill must be at least 1 characters")
     )
   ),
+  v.minLength(1, "At least one skill is required")
+),
 
   experience: v.pipe(
     v.number(),

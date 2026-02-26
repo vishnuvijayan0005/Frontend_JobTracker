@@ -112,6 +112,7 @@ const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     };
 
     const result = safeParse(UserProfileSchema, normalizedForm);
+// console.log(result);
 
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -228,7 +229,7 @@ const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       </Section>
 
       <div className="text-right">
-        <button className="bg-sky-600 text-white px-8 py-2 rounded-xl hover:bg-sky-700">
+        <button className="bg-sky-600 text-white px-8 py-2 rounded-xl hover:bg-sky-700" >
           Save Profile
         </button>
       </div>

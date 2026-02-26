@@ -233,7 +233,7 @@ export default function AddJobModal({
                 value={location}
                 onChange={e => { setLocation(e.target.value); setErrors(p => ({ ...p, location: undefined })); }}
                 className={fieldClass("location")}
-                placeholder="Location*"
+                placeholder="Job Location*"
               />
 
               <input value={experience} onChange={e => setExperience(e.target.value)} className="border p-2 rounded-lg" placeholder="Experience (e.g. 2–5 years)" />

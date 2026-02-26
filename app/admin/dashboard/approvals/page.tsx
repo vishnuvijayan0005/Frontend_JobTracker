@@ -42,6 +42,7 @@ const fectcompaniesapproavals=async()=>{
     try {
         const res= await api.get("/superadmin/companies")
         setComapaniesapprovals(res.data.data)
+  
     
         
     } catch (error) {

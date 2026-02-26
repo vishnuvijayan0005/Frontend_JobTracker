@@ -24,6 +24,8 @@ import CompanySwitcherModal from "./CompanySwitchmodal";
 import { logoutUser } from "@/store/slice/auth/auth";
 import { AppDispatch } from "@/store/store";
 import api from "@/utils/baseUrl";
+import NotificationsContent from "./NotificationsContent";
+import toast from "react-hot-toast";
 
 interface Job {
   _id: string;
@@ -177,77 +179,32 @@ export default function UserNavbar() {
         jobType: jobType || undefined,
       }, { withCredentials: true });
       if (res.data.success) {
-        alert("Job alert created!");
+        toast.success("Job alert created!");
         setKeywords(""); setLocation(""); setJobType("");
         setShowAlertForm(false);
       }
-    } catch (err) { alert("Failed to create alert"); } finally { setLoadingAlert(false); }
+    } catch (err) { toast.error("Failed to create alert"); } finally { setLoadingAlert(false); }
   };
 
   /* ================= COMPONENT: NOTIFICATION LIST ================= */
-  const NotificationsContent = () => (
-    <div className="flex flex-col h-full bg-white">
-      {!showAlertForm ? (
-        <button
-          className="w-full text-left text-blue-600 font-medium hover:text-blue-800 px-4 py-3 border-b bg-blue-50/30 transition-colors"
-          onClick={() => setShowAlertForm(true)}
-        >
-          + Create Custom Job Alert
-        </button>
-      ) : (
-        <div className="flex flex-col gap-2 px-4 py-3 border-b bg-gray-50">
-          <input type="text" placeholder="Keywords..." value={keywords} onChange={(e) => setKeywords(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-          <input type="text" placeholder="Location..." value={location} onChange={(e) => setLocation(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-          <div className="flex justify-end gap-2 mt-1">
-            <button className="text-gray-500 text-xs" onClick={() => setShowAlertForm(false)}>Cancel</button>
-            <button className="text-blue-600 text-xs font-bold" onClick={handleCreateJobAlert} disabled={loadingAlert}>{loadingAlert ? "Saving..." : "Save"}</button>
-          </div>
-        </div>
-      )}
-
-      {/* MARK ALL AS READ HEADER */}
-      {notifications.length > 0 && (
-        <div className="flex justify-between items-center px-4 py-2 border-b bg-gray-50/50">
-          <span className="text-xs font-semibold text-gray-500">Recent</span>
-          {unreadCount > 0 && (
-            <button 
-              onClick={markAllAsRead} 
-              className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 font-medium transition-colors"
-            >
-              <CheckCheck size={14} />
-              Mark all as read
-            </button>
-          )}
-        </div>
-      )}
-
-      {notifications.length === 0 ? (
-        <p className="p-10 text-center text-gray-500 text-sm">No notifications</p>
-      ) : (
-        <div className="flex-1 overflow-y-auto max-h-[400px]">
-          {notifications.map((n) => (
-            <div
-              key={n._id}
-              onClick={() => { markAsRead(n._id); if (n.link) router.push(n.link); }}
-              className={`block px-4 py-4 border-b cursor-pointer transition-colors hover:bg-gray-50 ${
-                n.isRead ? "bg-white opacity-75" : "bg-sky-50/50"
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <p className={`text-sm ${n.isRead ? "text-gray-600 font-normal" : "text-gray-900 font-bold"}`}>
-                  {n.title}
-                </p>
-                {!n.isRead && <span className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 flex-shrink-0" />}
-              </div>
-              <p className={`text-xs mt-1 ${n.isRead ? "text-gray-400" : "text-gray-600"}`}>
-                {n.message}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+{notifOpen && (
+  <div className="absolute right-0 mt-3 w-80 shadow-2xl rounded-xl border z-50">
+    <NotificationsContent
+      notifications={notifications}
+      unreadCount={unreadCount}
+      showAlertForm={showAlertForm}
+      setShowAlertForm={setShowAlertForm}
+      keywords={keywords}
+      setKeywords={setKeywords}
+      location={location}
+      setLocation={setLocation}
+      loadingAlert={loadingAlert}
+      handleCreateJobAlert={handleCreateJobAlert}
+      markAllAsRead={markAllAsRead}
+      markAsRead={markAsRead}
+    />
+  </div>
+)}
 
   return (
     <>
@@ -291,7 +248,20 @@ export default function UserNavbar() {
               </button>
               {notifOpen && (
                 <div className="absolute right-0 mt-3 w-80 shadow-2xl rounded-xl border z-50 overflow-hidden">
-                  <NotificationsContent />
+              <NotificationsContent
+  notifications={notifications}
+  unreadCount={unreadCount}
+  showAlertForm={showAlertForm}
+  setShowAlertForm={setShowAlertForm}
+  keywords={keywords}
+  setKeywords={setKeywords}
+  location={location}
+  setLocation={setLocation}
+  loadingAlert={loadingAlert}
+  handleCreateJobAlert={handleCreateJobAlert}
+  markAllAsRead={markAllAsRead}
+  markAsRead={markAsRead}
+/>
                 </div>
               )}
             </div>
@@ -364,7 +334,20 @@ export default function UserNavbar() {
               <button onClick={() => setNotifOpen(false)}><X className="h-6 w-6 text-gray-500" /></button>
             </div>
             <div className="flex-1 overflow-hidden">
-              <NotificationsContent />
+            <NotificationsContent
+  notifications={notifications}
+  unreadCount={unreadCount}
+  showAlertForm={showAlertForm}
+  setShowAlertForm={setShowAlertForm}
+  keywords={keywords}
+  setKeywords={setKeywords}
+  location={location}
+  setLocation={setLocation}
+  loadingAlert={loadingAlert}
+  handleCreateJobAlert={handleCreateJobAlert}
+  markAllAsRead={markAllAsRead}
+  markAsRead={markAsRead}
+/>
             </div>
           </div>
         </div>

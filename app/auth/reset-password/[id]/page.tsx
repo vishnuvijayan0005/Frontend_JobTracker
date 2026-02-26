@@ -6,6 +6,7 @@ import api from "@/utils/baseUrl";
 import { resetpassword } from "@/lib/validators/login.schema";
 import { safeParse } from "valibot";
 import { Eye, EyeOff, Lock } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -33,7 +34,7 @@ export default function ResetPassword() {
         password,
       });
 
-      alert("Password reset successful");
+      toast.success("Password reset successful");
       router.push("/auth/login");
     } catch {
       setError("Reset link is invalid or expired. Please request a new one.");
